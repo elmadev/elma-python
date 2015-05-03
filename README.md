@@ -20,11 +20,12 @@ pip install elma
 from elma.models import Level
 from elma.models import Obj
 from elma.models import Picture
+from elma.models import Point
 from elma.models import Polygon
 
 
 level = Level()
-self.name = 'My first level'
+level.name = 'My first level'
 level.polygons = [
     Polygon([Point(-10, -10),
              Point(10, -10),
@@ -36,7 +37,7 @@ level.objects = [
     Obj(Point(0, 10), Obj.FOOD, gravity=Obj.GRAVITY_UP),
     Obj(Point(0, 0), Obj.FLOWER),
 ]
-self.pictures = [
+level.pictures = [
     Picture(Point(2, 8), picture_name='flag'),
 ]
 ```
