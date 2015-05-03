@@ -13,9 +13,9 @@ Currently, it supports simple level manipulation.
 pip install elma
 ```
 
-# Usage
+## Usage
 
-## Creating a simple level
+### Creating a simple level
 ```
 from elma.models import Level
 from elma.models import Obj
@@ -43,7 +43,7 @@ self.pictures = [
 
 
 
-## Loading a level from file
+### Loading a level from file
 ```
 from elma.packing import unpack
 
@@ -51,7 +51,7 @@ with open('mylevel.lev') as f:
     level = unpack(f.read())
 ```
 
-## Saving a level to file
+### Saving a level to file
 ```
 from elma.packing import pack
 
@@ -61,6 +61,6 @@ with open('mylevel.lev', 'w') as f:
     f.write(pack(level))
 ```
 
-# Contributing
+## Contributing
 
 Pull requests welcome!
