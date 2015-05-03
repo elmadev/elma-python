@@ -7,6 +7,12 @@ Currently, it supports simple level manipulation.
 
 [Documentation is available at elma-python-library.readthedocs.org](https://elma-python-library.readthedocs.org).
 
+## Installation
+
+```
+pip install elma
+```
+
 # Usage
 
 ## Creating a simple level
