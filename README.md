@@ -54,3 +54,7 @@ level = ...
 with open('mylevel.lev', 'w') as f:
     f.write(pack(level))
 ```
+
+# Contributing
+
+Pull requests welcome!
