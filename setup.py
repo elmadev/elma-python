@@ -1,10 +1,9 @@
 from setuptools import setup
-import elma
 
 
 setup(
     name='elma',
-    version=elma.__version__,
+    version='0.2',
     url='http://github.com/sigvef/elma/',
     license='MIT',
     maintainer='Sigve Sebastian Farstad',
