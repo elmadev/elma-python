@@ -42,6 +42,9 @@ level.pictures = [
 ]
 ```
 
+The above snippet defines a simple level that looks like this:
+
+![](http://i.imgur.com/cl8SJgk.png)
 
 
 ### Loading a level from file
