@@ -9,7 +9,7 @@ Currently, it supports simple level manipulation.
 
 # Usage
 
-# Creating a simple level
+## Creating a simple level
 ```
 from elma.models import Level
 from elma.models import Obj
