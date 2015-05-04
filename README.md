@@ -16,7 +16,7 @@ pip install elma
 ## Usage
 
 ### Creating a simple level
-```
+```python
 from elma.models import Level
 from elma.models import Obj
 from elma.models import Picture
@@ -48,7 +48,7 @@ The above snippet defines a simple level that looks like this:
 
 
 ### Loading a level from file
-```
+```python
 from elma.packing import unpack
 
 with open('mylevel.lev') as f:
@@ -56,7 +56,7 @@ with open('mylevel.lev') as f:
 ```
 
 ### Saving a level to file
-```
+```python
 from elma.packing import pack
 
 level = ...
