@@ -168,6 +168,7 @@ class Level(object):
 class Frame(object):
     """
     Represent a single replay frame.
+
     Attributes:
         position (Point): The position of the kuski in this frame in level
             coordinates.
