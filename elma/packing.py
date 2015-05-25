@@ -1,12 +1,21 @@
 from constants import END_OF_DATA_MARKER
 from constants import END_OF_FILE_MARKER
+from constants import END_OF_REPLAY_FILE_MARKER
 from constants import TOP10_MULTIPLAYER
 from constants import TOP10_SINGLEPLAYER
+from models import Frame
+from models import GroundTouchAEvent
+from models import GroundTouchBEvent
+from models import LeftVoltEvent
 from models import Level
 from models import Obj
+from models import ObjectTouchEvent
 from models import Picture
 from models import Point
 from models import Polygon
+from models import Replay
+from models import RightVoltEvent
+from models import TurnEvent
 from utils import null_padded
 import random
 import struct
@@ -18,9 +27,9 @@ packers = {
     'Polygon': lambda polygon: ''.join([
         struct.pack('I', polygon.grass),
         struct.pack('I', len(polygon.points)),
-    ] + [pack(point) for point in polygon.points]),
+    ] + [pack_level(point) for point in polygon.points]),
     'Obj': lambda obj: ''.join([
-        pack(obj.point),
+        pack_level(obj.point),
         struct.pack('I', obj.type),
         struct.pack('I', obj.gravity),
         struct.pack('I', obj.animation_number)]),
@@ -28,15 +37,16 @@ packers = {
         null_padded(picture.picture_name, 10),
         null_padded(picture.texture_name, 10),
         null_padded(picture.mask_name, 10),
-        pack(picture.point),
+        pack_level(picture.point),
         struct.pack('I', picture.distance),
         struct.pack('I', picture.clipping)])
 }
 
 
-def pack(item):
+def pack_level(item):
     """
-    Pack an item to its binary representation readable by Elastomania.
+    Pack a level-related item to its binary representation readable by
+    Elastomania.
     """
     if type(item).__name__ in packers:
         return packers[type(item).__name__](item)
@@ -71,11 +81,11 @@ def pack(item):
         null_padded(level.ground_texture, 10),
         null_padded(level.sky_texture, 10),
         struct.pack('d', len(level.polygons) + 0.4643643),
-    ] + map(pack, level.polygons) + [
+    ] + map(pack_level, level.polygons) + [
         struct.pack('d', len(level.objects) + 0.4643643),
-    ] + map(pack, level.objects) + [
+    ] + map(pack_level, level.objects) + [
         struct.pack('d', len(level.pictures) + 0.2345672),
-    ] + map(pack, level.pictures) + [
+    ] + map(pack_level, level.pictures) + [
         struct.pack('I', END_OF_DATA_MARKER),
     ] + map(chr, TOP10_SINGLEPLAYER) + [
     ] + map(chr, TOP10_MULTIPLAYER) + [
@@ -83,9 +93,10 @@ def pack(item):
     ])
 
 
-def unpack(data):
+def unpack_level(data):
     """
-    Unpack an item from its binary representation readable by Elastomania.
+    Unpack a level-related item from its binary representation readable by
+    Elastomania.
     """
 
     data = iter(data)
@@ -142,3 +153,205 @@ def unpack(data):
                                       distance=distance,
                                       clipping=clipping))
     return level
+
+
+def unpack_replay(data):
+    """
+    Unpack a replay-related item from its binary representation readable by
+    Elastomania.
+    """
+
+    data = iter(data)
+
+    def munch(n):
+        return ''.join([next(data) for _ in range(n)])
+
+    def read_int32():
+        return struct.unpack('i', munch(4))[0]
+
+    def read_uint32():
+        return struct.unpack('I', munch(4))[0]
+
+    def read_int16():
+        return struct.unpack('h', munch(2))[0]
+
+    def read_uint8():
+        return struct.unpack('B', munch(1))[0]
+
+    def read_float():
+        return struct.unpack('f', munch(4))[0]
+
+    def read_double():
+        return struct.unpack('d', munch(8))[0]
+
+    replay = Replay()
+
+    number_of_replay_frames = read_int32()
+    munch(4)
+    replay.is_multi = bool(read_int32())
+    replay.is_flagtag = bool(read_int32())
+    replay.level_id = read_uint32()
+    replay.level_name = munch(12).rstrip('\0')
+    munch(4)
+
+    frame_numbers = range(number_of_replay_frames)
+    xs = [read_float() for _ in frame_numbers]
+    ys = [read_float() for _ in frame_numbers]
+    left_wheel_xs = [read_int16() for _ in frame_numbers]
+    left_wheel_ys = [read_int16() for _ in frame_numbers]
+    right_wheel_xs = [read_int16() for _ in frame_numbers]
+    right_wheel_ys = [read_int16() for _ in frame_numbers]
+    head_xs = [read_int16() for _ in frame_numbers]
+    head_ys = [read_int16() for _ in frame_numbers]
+    rotations = [read_int16() for _ in frame_numbers]
+    left_wheel_rotations = [read_uint8() for _ in frame_numbers]
+    right_wheel_rotations = [read_uint8() for _ in frame_numbers]
+    gas_and_turn_states = [read_uint8() for _ in frame_numbers]
+    sound_effect_volumes = [read_int16() for _ in frame_numbers]
+
+    for (x,
+         y,
+         left_wheel_x,
+         left_wheel_y,
+         right_wheel_x,
+         right_wheel_y,
+         head_x,
+         head_y,
+         rotation,
+         left_wheel_rotation,
+         right_wheel_rotation,
+         gas_and_turn_state,
+         sound_effect_volume) in zip(xs,
+                                     ys,
+                                     left_wheel_xs,
+                                     left_wheel_ys,
+                                     right_wheel_xs,
+                                     right_wheel_ys,
+                                     head_xs,
+                                     head_ys,
+                                     rotations,
+                                     left_wheel_rotations,
+                                     right_wheel_rotations,
+                                     gas_and_turn_states,
+                                     sound_effect_volumes):
+
+        frame = Frame()
+        frame.position = Point(x, y)
+        frame.left_wheel_position = Point(left_wheel_x, left_wheel_y)
+        frame.right_wheel_position = Point(right_wheel_x, right_wheel_y)
+        frame.head_position = Point(head_x, head_y)
+        frame.rotation = rotation
+        frame.left_wheel_rotation = left_wheel_rotation
+        frame.right_wheel_rotation = right_wheel_rotation
+        frame.is_gasing = bool(gas_and_turn_state & 0b1)
+        frame.is_turned_right = bool(gas_and_turn_state & 0b10)
+        # preserve remaining 6 bits of state
+        frame._gas_and_turn_state = gas_and_turn_state
+        frame.spring_sound_effect_volume = sound_effect_volume
+        replay.frames.append(frame)
+
+    number_of_replay_events = read_int32()
+    for _ in range(number_of_replay_events):
+        event_time = read_double()
+        event_type_1 = read_int32()
+        event_type_2 = read_int32()
+
+        if event_type_2 == 0:
+            event = ObjectTouchEvent()
+            event.object_number = event_type_1
+        elif event_type_1 == 393215 and event_type_2 == 1065185444:
+            event = TurnEvent()
+        elif event_type_1 == 524287 and event_type_2 == 1065185444:
+            event = LeftVoltEvent()
+        elif event_type_1 == 458751 and event_type_2 == 1065185444:
+            event = RightVoltEvent()
+        elif event_type_1 == 131071:
+            event = GroundTouchAEvent()
+            event.value = event_type_2
+        elif event_type_1 == 327679:
+            event = GroundTouchBEvent()
+            event.value = event_type_2
+
+        event.time = event_time
+        replay.events.append(event)
+
+    return replay
+
+
+def pack_replay(item):
+    """
+    Pack a replay-related item to its binary representation readable by
+    Elastomania.
+    """
+
+    if isinstance(item, ObjectTouchEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', item.object_number) +
+                struct.pack('I', 0))
+
+    if isinstance(item, TurnEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', 393215) +
+                struct.pack('I', 1065185444))
+
+    if isinstance(item, LeftVoltEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', 524287) +
+                struct.pack('I', 1065185444))
+
+    if isinstance(item, RightVoltEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', 458751) +
+                struct.pack('I', 1065185444))
+
+    if isinstance(item, GroundTouchAEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', 131071) +
+                struct.pack('I', item.value))
+
+    if isinstance(item, GroundTouchBEvent):
+        return (struct.pack('d', item.time) +
+                struct.pack('I', 327679) +
+                struct.pack('I', item.value))
+
+    replay = item
+    return ''.join([
+        struct.pack('i', len(replay.frames)),
+        struct.pack('i', 0x83),
+        struct.pack('i', replay.is_multi),
+        struct.pack('i', replay.is_flagtag),
+        struct.pack('I', replay.level_id),
+        null_padded(replay.level_name, 12),
+        struct.pack('i', 0),
+        ''.join([struct.pack('f', frame.position.x)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('f', frame.position.y)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.left_wheel_position.x)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.left_wheel_position.y)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.right_wheel_position.x)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.right_wheel_position.y)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.head_position.x)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.head_position.y)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.rotation)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('B', frame.left_wheel_rotation)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('B', frame.right_wheel_rotation)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('B',
+                             frame._gas_and_turn_state & 0b11111100 |
+                             (frame.is_turned_right << 1) | frame.is_gasing)
+                 for frame in replay.frames]),
+        ''.join([struct.pack('h', frame.spring_sound_effect_volume)
+                 for frame in replay.frames]),
+        struct.pack('I', len(replay.events)),
+        ''.join([pack_replay(event) for event in replay.events]),
+        struct.pack('I', END_OF_REPLAY_FILE_MARKER),
+    ])

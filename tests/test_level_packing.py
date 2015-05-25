@@ -3,12 +3,12 @@ from elma.models import Obj
 from elma.models import Picture
 from elma.models import Point
 from elma.models import Polygon
-from elma.packing import pack
-from elma.packing import unpack
+from elma.packing import pack_level
+from elma.packing import unpack_level
 import unittest
 
 
-class TestPacking(unittest.TestCase):
+class TestLevelPacking(unittest.TestCase):
 
     def test_packing(self):
         level = Level()
@@ -27,7 +27,7 @@ class TestPacking(unittest.TestCase):
             Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_RIGHT),
             Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_NORMAL)
         ]
-        level = unpack(pack(level))
+        level = unpack_level(pack_level(level))
         self.assertEqual(2535781587, level.level_id)
         self.assertEqual('Unnamed', level.name)
         self.assertEqual('DEFAULT', level.lgr)

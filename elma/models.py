@@ -1,3 +1,4 @@
+from abc import ABCMeta
 import random
 
 
@@ -131,7 +132,7 @@ class Polygon(object):
 
 class Level(object):
     """
-    Represents an Elastomania level.
+    Represent an Elastomania level.
 
     Attributes:
         polygons (list): A list of Polygons in the level.
@@ -162,3 +163,167 @@ class Level(object):
                  'ground_texture: %s, sky_texture: %s)') %
                 (self.level_id, self.name, self.lgr,
                  self.ground_texture, self.sky_texture))
+
+
+class Frame(object):
+    """
+    Represent a single replay frame.
+    Attributes:
+        position (Point): The position of the kuski in this frame in level
+            coordinates.
+        left_wheel_position (Point): The position of the bike's left wheel in
+            this frame relative to the position of the kuski.
+        right_wheel_position (Point): The position of the bike's right wheel in
+            this frame relative to the position of the kuski.
+        head_position (point): The position of the kuski's head in this frame
+            relative to the position of the kuski.
+        rotation (int): The rotation of the kuski in 10000ths of a radian.
+        left_wheel_rotation (int): The rotation of the bike's left wheel in
+            249/2/pi-ths of a radian.
+        right_wheel_rotation (int): The rotation of the bike's right wheel in
+            249/2/pi-ths of a radian.
+        is_gasing (boolean): Whether or not the bike is gasing in this frame.
+        is_turned_right (boolean): Whether or not the bike is turned right in
+            this frame.
+        spring_sound_effect_volume (int): The spring sound effect volume for
+            this frame.
+    """
+    def __init__(self):
+        self.position = Point(0, 0)
+        self.left_wheel_position = Point(0, 0)
+        self.right_wheel_position = Point(0, 0)
+        self.head_position = Point(0, 0)
+        self.rotation = 0
+        self.left_wheel_rotation = 0
+        self.right_wheel_rotation = 0
+        self.is_gasing = 0
+        self.is_turned_right = 0
+        self.spring_sound_effect_volume = 0
+
+    def __repr__(self):
+        return ('Frame(position: %s, left_wheel_position: %s, ' +
+                'right_wheel_position: %s, head_position: %s, ' +
+                'rotation: %s, left_wheel_rotation: %s, ' +
+                'right_wheel_rotation: %s, is_gasing: %s, ' +
+                'is_turned_right: %s, spring_sound_effect_volume: %s)') % (
+                    self.position,
+                    self.left_wheel_position,
+                    self.right_wheel_position,
+                    self.head_position,
+                    self.rotation,
+                    self.left_wheel_rotation,
+                    self.right_wheel_rotation,
+                    self.is_gasing,
+                    self.is_turned_right,
+                    self.spring_sound_effect_volume)
+
+
+class Event(object):
+    """
+    Abstract base representation of a single replay event.
+
+    Attributes:
+        time (float): The time at which the event occurs, given in 625/273ths
+            of a second.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        self.time = 0
+
+    def __repr__(self):
+        return 'Event(time: %s)' % self.time_of_event
+
+
+class ObjectTouchEvent(Event):
+    """
+    Represent a single replay object touch event.
+    """
+    def __init__(self):
+        self.object_number = 0
+
+    def __repr__(self):
+        return 'ObjectTouchEvent(time: %s, object_number: %s)' % (
+               self.time, self.object_number)
+
+
+class TurnEvent(Event):
+    """
+    Represent a single replay turn event.
+    """
+    def __repr__(self):
+        return 'TurnEvent(time: %s)' % self.time_of_event
+
+
+class LeftVoltEvent(Event):
+    """
+    Represent a single replay left volt event.
+    """
+    def __repr__(self):
+        return 'LeftVoltEvent(time: %s)' % self.time_of_event
+
+
+class RightVoltEvent(Event):
+    """
+    Represent a single replay right volt event.
+    """
+    def __repr__(self):
+        return 'RightVoltEvent(time: %s)' % self.time_of_event
+
+
+class GroundTouchAEvent(Event):
+    """
+    Represent a single replay ground touch A event.
+    """
+    def __init__(self):
+        self.value = 0
+
+    def __repr__(self):
+        return 'GroundTouchAEvent(time: %s)' % self.time_of_event
+
+
+class GroundTouchBEvent(Event):
+    """
+    Represent a single replay ground touch B event.
+    """
+    def __init__(self):
+        self.value = 0
+
+    def __repr__(self):
+        return 'GroundTouchBEvent(time: %s)' % self.time_of_event
+
+
+class Replay(object):
+    """
+    Represent an Elastomania replay.
+
+    Attributes:
+        is_multi (boolean): Whether or not the replay is a multiplayer replay.
+        is_flagtag (boolean): Whether or not the replay is a flagtag replay.
+        level_id (int): The unique identifier of the level this replay is from.
+        level_name (string): The name of the level this replay is from.
+        frames (list): The frames of this replay.
+        events (list): The events of this replay.
+    """
+    def __init__(self):
+        self.is_multi = False
+        self.is_flagtag = False
+        self.level_id = 0
+        self.level_name = ''
+        self.frames = []
+        self.events = []
+        # Needed to preserve unknown bits from rec files
+        self._gas_and_turn_state = 0
+
+    def get_exact_duration_in_seconds(self):
+        """
+        Calculates the exact replay duration in seconds.
+        """
+        return self.events[-1].time * 625/273
+
+    def __repr__(self):
+        return (
+            'Replay(is_multi: %s, is_flagtag: %s, level_id: %s, ' +
+            'level_name: %s, len(frames): %s, len(events): %s)') % (
+            self.is_multi, self.is_flagtag, self.level_id, self.level_name,
+            len(self.frames), len(self.events))
