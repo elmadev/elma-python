@@ -1,39 +1,47 @@
-from constants import END_OF_DATA_MARKER
-from constants import END_OF_FILE_MARKER
-from constants import END_OF_REPLAY_FILE_MARKER
-from constants import TOP10_MULTIPLAYER
-from constants import TOP10_SINGLEPLAYER
-from models import Frame
-from models import GroundTouchAEvent
-from models import GroundTouchBEvent
-from models import LeftVoltEvent
-from models import Level
-from models import Obj
-from models import ObjectTouchEvent
-from models import Picture
-from models import Point
-from models import Polygon
-from models import Replay
-from models import RightVoltEvent
-from models import TurnEvent
-from utils import null_padded
+from elma.constants import END_OF_DATA_MARKER
+from elma.constants import END_OF_FILE_MARKER
+from elma.constants import END_OF_REPLAY_FILE_MARKER
+from elma.constants import TOP10_MULTIPLAYER
+from elma.constants import TOP10_SINGLEPLAYER
+from elma.models import Frame
+from elma.models import GroundTouchAEvent
+from elma.models import GroundTouchBEvent
+from elma.models import LeftVoltEvent
+from elma.models import Level
+from elma.models import Obj
+from elma.models import ObjectTouchEvent
+from elma.models import Picture
+from elma.models import Point
+from elma.models import Polygon
+from elma.models import Replay
+from elma.models import RightVoltEvent
+from elma.models import TurnEvent
+from elma.utils import null_padded
 import random
 import struct
 
+try:
+    bytes('A', 'latin1')
+    PY_VERSION = 3
+except TypeError:
+    PY_VERSION = 2
+    bytes = lambda a, b: a
+    _chr = chr
+    chr = lambda a: a if type(a) == str else _chr(a)
 
 packers = {
     'Point': lambda point:
         struct.pack('d', point.x) + struct.pack('d', point.y),
-    'Polygon': lambda polygon: ''.join([
+    'Polygon': lambda polygon: b''.join([
         struct.pack('I', polygon.grass),
         struct.pack('I', len(polygon.points)),
     ] + [pack_level(point) for point in polygon.points]),
-    'Obj': lambda obj: ''.join([
+    'Obj': lambda obj: b''.join([
         pack_level(obj.point),
         struct.pack('I', obj.type),
         struct.pack('I', obj.gravity),
         struct.pack('I', obj.animation_number)]),
-    'Picture': lambda picture: ''.join([
+    'Picture': lambda picture: b''.join([
         null_padded(picture.picture_name, 10),
         null_padded(picture.texture_name, 10),
         null_padded(picture.mask_name, 10),
@@ -48,6 +56,7 @@ def pack_level(item):
     Pack a level-related item to its binary representation readable by
     Elastomania.
     """
+
     if type(item).__name__ in packers:
         return packers[type(item).__name__](item)
 
@@ -68,8 +77,8 @@ def pack_level(item):
     integrity_4 = random.randint(0, 6102) + 12112 - collected_checksum
     assert ((integrity_3 - integrity_2) <= 5871)
 
-    return ''.join([
-        'POT14',
+    return b''.join([
+        bytes('POT14', 'latin1'),
         struct.pack('H', level.level_id & 0xFFFF),
         struct.pack('I', level.level_id),
         struct.pack('d', integrity_1),
@@ -81,14 +90,14 @@ def pack_level(item):
         null_padded(level.ground_texture, 10),
         null_padded(level.sky_texture, 10),
         struct.pack('d', len(level.polygons) + 0.4643643),
-    ] + map(pack_level, level.polygons) + [
+    ] + [pack_level(polygon) for polygon in level.polygons] + [
         struct.pack('d', len(level.objects) + 0.4643643),
-    ] + map(pack_level, level.objects) + [
+    ] + [pack_level(obj) for obj in level.objects] + [
         struct.pack('d', len(level.pictures) + 0.2345672),
-    ] + map(pack_level, level.pictures) + [
+    ] + [pack_level(picture) for picture in level.pictures] + [
         struct.pack('I', END_OF_DATA_MARKER),
-    ] + map(chr, TOP10_SINGLEPLAYER) + [
-    ] + map(chr, TOP10_MULTIPLAYER) + [
+    ] + [bytes(chr(c), 'latin1') for c in TOP10_SINGLEPLAYER] + [
+    ] + [bytes(chr(c), 'latin1') for c in TOP10_MULTIPLAYER] + [
         struct.pack('I', END_OF_FILE_MARKER),
     ])
 
@@ -102,17 +111,17 @@ def unpack_level(data):
     data = iter(data)
 
     def munch(n):
-        return ''.join([next(data) for _ in range(n)])
+        return b''.join([bytes(chr(next(data)), 'latin1') for _ in range(n)])
 
     level = Level()
-    assert munch(5) == 'POT14'
+    assert munch(5) == b'POT14'
     munch(2)
     level.level_id = struct.unpack('I', munch(4))[0]
     munch(8 * 4)
-    level.name = munch(51).rstrip('\0')
-    level.lgr = munch(16).rstrip('\0')
-    level.ground_texture = munch(10).rstrip('\0')
-    level.sky_texture = munch(10).rstrip('\0')
+    level.name = munch(51).rstrip(b'\0')
+    level.lgr = munch(16).rstrip(b'\0')
+    level.ground_texture = munch(10).rstrip(b'\0')
+    level.sky_texture = munch(10).rstrip(b'\0')
 
     number_of_polygons = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_polygons):
@@ -129,11 +138,11 @@ def unpack_level(data):
     for _ in range(number_of_objects):
         x = struct.unpack('d', munch(8))[0]
         y = struct.unpack('d', munch(8))[0]
-        type = struct.unpack('I', munch(4))[0]
+        object_type = struct.unpack('I', munch(4))[0]
         gravity = struct.unpack('I', munch(4))[0]
         animation_number = struct.unpack('I', munch(4))[0]
         level.objects.append(Obj(Point(x, y),
-                                 type,
+                                 object_type,
                                  gravity=gravity,
                                  animation_number=animation_number))
 
@@ -164,7 +173,7 @@ def unpack_replay(data):
     data = iter(data)
 
     def munch(n):
-        return ''.join([next(data) for _ in range(n)])
+        return b''.join([bytes(chr(next(data)), 'latin1') for _ in range(n)])
 
     def read_int32():
         return struct.unpack('i', munch(4))[0]
@@ -191,7 +200,7 @@ def unpack_replay(data):
     replay.is_multi = bool(read_int32())
     replay.is_flagtag = bool(read_int32())
     replay.level_id = read_uint32()
-    replay.level_name = munch(12).rstrip('\0')
+    replay.level_name = munch(12).rstrip(b'\0')
     munch(4)
 
     frame_numbers = range(number_of_replay_frames)
@@ -315,43 +324,47 @@ def pack_replay(item):
                 struct.pack('I', item.value))
 
     replay = item
-    return ''.join([
+    if PY_VERSION == 2:
+        name = null_padded(replay.level_name, 12)
+    else:
+        name = null_padded(replay.level_name.decode('latin1'), 12)
+    return b''.join([
         struct.pack('i', len(replay.frames)),
         struct.pack('i', 0x83),
         struct.pack('i', replay.is_multi),
         struct.pack('i', replay.is_flagtag),
         struct.pack('I', replay.level_id),
-        null_padded(replay.level_name, 12),
+        name,
         struct.pack('i', 0),
-        ''.join([struct.pack('f', frame.position.x)
+        b''.join([struct.pack('f', frame.position.x)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('f', frame.position.y)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.left_wheel_position.x)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.left_wheel_position.y)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.right_wheel_position.x)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.right_wheel_position.y)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.head_position.x)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.head_position.y)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.rotation)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('B', frame.left_wheel_rotation)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('B', frame.right_wheel_rotation)
+                  for frame in replay.frames]),
+        b''.join([struct.pack('B',
+                              frame._gas_and_turn_state & 0b11111100 |
+                              (frame.is_turned_right << 1) | frame.is_gasing)
                  for frame in replay.frames]),
-        ''.join([struct.pack('f', frame.position.y)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.left_wheel_position.x)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.left_wheel_position.y)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.right_wheel_position.x)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.right_wheel_position.y)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.head_position.x)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.head_position.y)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.rotation)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('B', frame.left_wheel_rotation)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('B', frame.right_wheel_rotation)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('B',
-                             frame._gas_and_turn_state & 0b11111100 |
-                             (frame.is_turned_right << 1) | frame.is_gasing)
-                 for frame in replay.frames]),
-        ''.join([struct.pack('h', frame.spring_sound_effect_volume)
-                 for frame in replay.frames]),
+        b''.join([struct.pack('h', frame.spring_sound_effect_volume)
+                  for frame in replay.frames]),
         struct.pack('I', len(replay.events)),
-        ''.join([pack_replay(event) for event in replay.events]),
+        b''.join([pack_replay(event) for event in replay.events]),
         struct.pack('I', END_OF_REPLAY_FILE_MARKER),
     ])
