@@ -28,12 +28,13 @@ class TestLevelPacking(unittest.TestCase):
             Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_NORMAL)
         ]
         packed = pack_level(level)
+        original_level = level
         level = unpack_level(packed)
         self.assertEqual(2535781587, level.level_id)
-        self.assertEqual(b'Unnamed', level.name)
-        self.assertEqual(b'DEFAULT', level.lgr)
-        self.assertEqual(b'ground', level.ground_texture)
-        self.assertEqual(b'sky', level.sky_texture)
+        self.assertEqual('Unnamed', level.name)
+        self.assertEqual('DEFAULT', level.lgr)
+        self.assertEqual('ground', level.ground_texture)
+        self.assertEqual('sky', level.sky_texture)
 
         # polygons
         self.assertEqual(1, len(level.polygons))
@@ -43,6 +44,13 @@ class TestLevelPacking(unittest.TestCase):
 
         # pictures
         self.assertEqual(1, len(level.pictures))
+        picture = level.pictures[0]
+        original_picture = original_level.pictures[0]
+        self.assertEqual(original_picture.picture_name, picture.picture_name)
+        self.assertEqual(original_picture.texture_name, picture.texture_name)
+        self.assertEqual(original_picture.mask_name, picture.mask_name)
+        self.assertEqual(original_picture.distance, picture.distance)
+        self.assertEqual(original_picture.clipping, picture.clipping)
 
         # objects
         self.assertEqual(9, len(level.objects))

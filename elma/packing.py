@@ -118,10 +118,10 @@ def unpack_level(data):
     munch(2)
     level.level_id = struct.unpack('I', munch(4))[0]
     munch(8 * 4)
-    level.name = munch(51).rstrip(b'\0')
-    level.lgr = munch(16).rstrip(b'\0')
-    level.ground_texture = munch(10).rstrip(b'\0')
-    level.sky_texture = munch(10).rstrip(b'\0')
+    level.name = munch(51).rstrip(b'\0').decode('latin1')
+    level.lgr = munch(16).rstrip(b'\0').decode('latin1')
+    level.ground_texture = munch(10).rstrip(b'\0').decode('latin1')
+    level.sky_texture = munch(10).rstrip(b'\0').decode('latin1')
 
     number_of_polygons = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_polygons):
@@ -148,9 +148,9 @@ def unpack_level(data):
 
     number_of_pictures = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_pictures):
-        picture_name = munch(10).rstrip(b'\0')
-        texture_name = munch(10).rstrip(b'\0')
-        mask_name = munch(10).rstrip(b'\0')
+        picture_name = munch(10).rstrip(b'\0').decode('latin1')
+        texture_name = munch(10).rstrip(b'\0').decode('latin1')
+        mask_name = munch(10).rstrip(b'\0').decode('latin1')
         x = struct.unpack('d', munch(8))[0]
         y = struct.unpack('d', munch(8))[0]
         distance = struct.unpack('I', munch(4))[0]
