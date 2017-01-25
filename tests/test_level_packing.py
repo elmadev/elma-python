@@ -30,10 +30,10 @@ class TestLevelPacking(unittest.TestCase):
         packed = pack_level(level)
         level = unpack_level(packed)
         self.assertEqual(2535781587, level.level_id)
-        self.assertEqual(b'Unnamed', level.name)
-        self.assertEqual(b'DEFAULT', level.lgr)
-        self.assertEqual(b'ground', level.ground_texture)
-        self.assertEqual(b'sky', level.sky_texture)
+        self.assertEqual('Unnamed', level.name)
+        self.assertEqual('DEFAULT', level.lgr)
+        self.assertEqual('ground', level.ground_texture)
+        self.assertEqual('sky', level.sky_texture)
 
         # polygons
         self.assertEqual(1, len(level.polygons))
