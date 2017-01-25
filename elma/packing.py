@@ -148,9 +148,9 @@ def unpack_level(data):
 
     number_of_pictures = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_pictures):
-        picture_name = munch(10)
-        texture_name = munch(10)
-        mask_name = munch(10)
+        picture_name = munch(10).rstrip(b'\0')
+        texture_name = munch(10).rstrip(b'\0')
+        mask_name = munch(10).rstrip(b'\0')
         x = struct.unpack('d', munch(8))[0]
         y = struct.unpack('d', munch(8))[0]
         distance = struct.unpack('I', munch(4))[0]
