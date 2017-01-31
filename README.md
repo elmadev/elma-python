@@ -1,7 +1,7 @@
 # Elma Python Library
 
 Elma Python Library is a python library for manipulating Elastomania files.
-Currently, it supports simple level manipulation.
+Currently, it supports simple level and replay manipulation.
 
 ## Documentation
 
