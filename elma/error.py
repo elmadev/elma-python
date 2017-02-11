@@ -41,7 +41,7 @@ ERR_NAME_MISSING=1003
 ERR_PADDING=1004
 ERR_IMAGE_TYPE=1005
 ERR_DISTANCE=1006
-ERR_TRANSPERANCY=1007
+ERR_TRANSPARENCY=1007
 ERR_TOO_WIDE=1008
 ERR_TOO_LARGE=1009
 ERR_OBJ_WIDTH=1010
@@ -102,7 +102,7 @@ def check_LGR_error(lgro,palette=None):
                         message.append([ERR_DUPLICATE_NAME,lgro.images[j],"The LGR file has a duplicate of the following filename: %s"%(lgro.images[j].name)])
             message_temp=check_LGR_error(lgro.images[i],use_palette)
             if(message_temp):
-                message.append(message_temp)
+                message.extend(message_temp)
         if(n_grass>LGR_GRASS_MAX):
             message.append([ERR_TOO_MANY_GRASS,n_grass,"The LGR file has %s grass images but can only support %s at most"%(n_grass,LGR_GRASS_MAX)])
         if(n_pic>LGR_PIC_MAX):
@@ -154,15 +154,15 @@ def check_LGR_error(lgro,palette=None):
                             if(lgro.img.width>LGR_PIC_WIDTH_MAX):
                                 message.append([ERR_TOO_WIDE,lgro,"%s is too wide (%s) - the maximum is %s"%(lgro.name,lgro.width,LGR_PIC_WIDTH_MAX)])
                             if(lgro.img.width*lgro.img.height>LGR_PIC_SIZE_MAX):
-                                message.append([ERR_TOO_LARGE,lgro,"%s has too many pixels (%s) - the maximum is %s"%(lgro.name,lgro.img.width*lgro.img.height,LGR_PIC_SIZE_MAX)])
+                                message.append([ERR_TOO_LARGE,lgro,"%s has too many pixels (%s) - the maximum is %s. Depending on the image, the game might crash"%(lgro.name,lgro.img.width*lgro.img.height,LGR_PIC_SIZE_MAX)])
                         elif(lgro.image_type==LGR_Image.MASK):
                             is_mask=True
                     if(1>lgro.default_distance<999 and not(is_mask)):
                         message.append([ERR_DISTANCE,lgro,"%s's distance is invalid (must be integer between 1-999)"%(lgro.name)])
                     if(0>lgro.default_clipping<2 and not(is_mask)):
                         message.append([ERR_DISTANCE,lgro,"%s's clipping is invalid"%(lgro.name)])
-                    if(11>lgro.transperancy<15):
-                        message.append([ERR_TRANSERPANCY,lgro,"%s's transperancy is invalid"%(lgro.name)])
+                    if(11>lgro.transparency<15):
+                        message.append([ERR_TRANSPARENCY,lgro,"%s's transparency is invalid"%(lgro.name)])
             
         if(lgro.img):
             with io.BytesIO() as f:
