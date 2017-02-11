@@ -4,10 +4,12 @@ from elma.constants import LGR_DEFAULT_PALETTE
 from elma.constants import LGR_END_OF_FILE
 from elma.constants import LGR_PICTURES_LST_ID 
 from elma.constants import LGR_PCX_PADDING
+from elma.constants import LGR_FOOD_NAME
 from elma.utils import null_padded
 from PIL import Image
 import struct
 import io
+import re
 
 class LGR_Image(object):
     """
@@ -22,18 +24,18 @@ class LGR_Image(object):
         name (string): The name of the item in the LGR file, excluding pcx. e.g. "barrel"
         img (Image): Image object pointing to the image to be used (PIL.Image.open(file))
             http://pillow.readthedocs.io/en/3.1.x/reference/Image.html
-        padding (int[7]): Each LGR entry has 7 bytes of padding that are unused. This can
-            in theory be used to store extra information.
         image_type (int): The type of image. Should be one of: LGR_Image.PICTURE, LGR_Image.TEXTURE,
             LGR_Image.MASK. Only used if **is_in_pictures_lst()=True**
         default_distance (int): The default z-ordering distance of a picture or texture. Should
             be in the range 1-999. Only used **if is_in_pictures_lst()=True**
         default_clipping (int): The default clipping of a picture or texture. Should be one of:
             LGR_Image.CLIPPING_U, LGR_Image.CLIPPING_G, LGR_Image.CLIPPING_S. Only used if **is_in_pictures_lst()=True**
-        transperancy (int): The pixel corresponding to the color or item in a palette that should
-            be transperant. Should be one of: LGR_Image.TRANSPERANCY_NONE,
-            LGR_Image.TRANSPERANCY_TOPLEFT, LGR_Image.TRANSPERANCY_TOPRIGHT,
-            LGR_Image.TRANSPERANCY_BOTTOMLEFT, LGR_Image.TRANSPERANCY_BOTTOMRIGHT. Only used if **is_in_pictures_lst()=True**
+        transparency (int): The pixel corresponding to the color or item in a palette that should
+            be transperant. Should be one of: LGR_Image.TRANSPARENCY_NONE,
+            LGR_Image.TRANSPARENCY_TOPLEFT, LGR_Image.TRANSPARENCY_TOPRIGHT,
+            LGR_Image.TRANSPARENCY_BOTTOMLEFT, LGR_Image.TRANSPARENCY_BOTTOMRIGHT. Only used if **is_in_pictures_lst()=True**
+        padding (int[7]): Each LGR entry has 7 bytes of padding that are unused. This can
+            in theory be used to store extra information.
     """
 
     CLIPPING_U = 0
@@ -42,20 +44,18 @@ class LGR_Image(object):
     PICTURE = 100
     TEXTURE = 101
     MASK=102
-    TRANSPERANCY_NONE=11
-    TRANSPERANCY_TOPLEFT=12
-    TRANSPERANCY_TOPRIGHT=13
-    TRANSPERANCY_BOTTOMLEFT=14
-    TRANSPERANCY_BOTTOMRIGHT=15
+    TRANSPARENCY_NONE=11
+    TRANSPARENCY_TOPLEFT=12
+    TRANSPARENCY_TOPRIGHT=13
+    TRANSPARENCY_BOTTOMLEFT=14
+    TRANSPARENCY_BOTTOMRIGHT=15
     
     def is_in_pictures_lst(self):
         """
-        Determines whether image with the given name appears in pictures.lst (i.e. has the extra variables image_type, default_distance, default_clipping, transperancy)
+        Determines whether image with the given name appears in pictures.lst (i.e. has the extra variables image_type, default_distance, default_clipping, transparency)
         Returns True if the image appears in pictures.lst, meaning the extra variables may be used.
         """
-        if(self.name.lower() in LGR_NOT_IN_PICTURES_LST):
-            return False
-        return True
+        return not(self.name.lower() in LGR_NOT_IN_PICTURES_LST)
 
     def get_palette(self):
         """
@@ -125,10 +125,22 @@ class LGR_Image(object):
         Returns the default palette used in default.lgr (LGR_DEFAULT_PALETTE)
         """
         return LGR_DEFAULT_PALETTE
-        
-        
+    
+    def is_qup_qdown(self):
+        """
+        Checks if the current object name qualifies as a qup_ or qdown_ object
+        """
+        namelower=self.name.lower()
+        return (namelower[:4]=="qup_" or namelower[:6]=="qdown_")
+    
+    def is_food(self):
+        """
+        Checks if the current object name is qfood*
+        """
+        return (self.name.lower() in LGR_FOOD_NAME)
+    
     def __init__(self, name, img=None, image_type=PICTURE, default_distance=500,
-                default_clipping=CLIPPING_S, transperancy=TRANSPERANCY_TOPLEFT, padding=LGR_PCX_PADDING):
+                default_clipping=CLIPPING_S, transparency=TRANSPARENCY_TOPLEFT, padding=LGR_PCX_PADDING):
         self.name=name
         self.img=img
         self.padding=padding
@@ -136,14 +148,14 @@ class LGR_Image(object):
             self.image_type=image_type
             self.default_distance=default_distance
             self.default_clipping=default_clipping
-            self.transperancy=transperancy
+            self.transparency=transparency
 		
     def __repr__(self):
         if(self.is_in_pictures_lst()):
             return (('LGR_Image(name: %s, img: %s, image_type: %s,' +
-             'default_distance: %s, default_clipping: %s, transperancy: %s, padding: %s)') %
+             'default_distance: %s, default_clipping: %s, transparency: %s, padding: %s)') %
             (self.name, self.img, self.image_type,
-             self.default_distance, self.default_clipping, self.transperancy, self.padding))
+             self.default_distance, self.default_clipping, self.transparency, self.padding))
         return (('LGR_Image(name: %s, img: %s, padding: %s)') % (self.name, self.img, self.padding))
 
     def __eq__(self, other_picture):
@@ -156,7 +168,7 @@ class LGR_Image(object):
                     self.image_type == other_picture.image_type and
                     self.default_distance == other_picture.default_distance and
                     self.default_clipping == other_picture.default_clipping and
-                    self.transperancy == other_picture.transperancy and
+                    self.transparency == other_picture.transparency and
                     self.padding == other_picture.padding)
         return (self.name == other_picture.name and
                 self.img.mode == other_picture.img.mode and
@@ -213,14 +225,16 @@ def unpack_LGR(data):
             image_type=get_int(17+10*l+4*i),
             default_distance=get_int(17+14*l+4*i),
             default_clipping=get_int(17+18*l+4*i),
-            transperancy=get_int(17+22*l+4*i),
+            transparency=get_int(17+22*l+4*i),
             padding=LGR_PCX_PADDING))
     
     sp=17+l*26
     
     foundPalette=False
     for i in range(x):
-        pcx_name=data[sp:sp+12].rstrip(b'\0').decode('latin1')[:-4]
+        term=re.compile(b'.pcx\0',re.IGNORECASE)
+        pcx_name=data[sp:sp+13]
+        pcx_name=pcx_name[:term.search(pcx_name).start()].decode('latin1')
         lst_pcx_match=False
         pcx_padding=[int.from_bytes(data[sp+12+1+k:sp+12+1+k+1],byteorder='little',signed=False) for k in range(7)]
         pcx_len=get_int(sp+20)
@@ -261,7 +275,7 @@ def pack_LGR(lgrf):
     l_image_type=[]
     l_default_distance=[]
     l_default_clipping=[]
-    l_transperancy=[]
+    l_transparency=[]
     x=[]
     for obj in lgrf.images:
         if(obj.is_in_pictures_lst()):
@@ -270,7 +284,7 @@ def pack_LGR(lgrf):
             l_image_type.append(to_int(obj.image_type))
             l_default_distance.append(to_int(obj.default_distance))
             l_default_clipping.append(to_int(obj.default_clipping))
-            l_transperancy.append(to_int(obj.transperancy))
+            l_transparency.append(to_int(obj.transparency))
         with io.BytesIO() as f:
             obj.save_PCX(f)
             x_len=f.tell()
@@ -290,6 +304,6 @@ def pack_LGR(lgrf):
         b"".join(l_image_type),
         b"".join(l_default_distance),
         b"".join(l_default_clipping),
-        b"".join(l_transperancy),
+        b"".join(l_transparency),
         b"".join(x),
         to_int(LGR_END_OF_FILE)])
