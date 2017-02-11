@@ -85,6 +85,10 @@ LGR_NOT_IN_PICTURES_LST=["q1body","q1thigh","q1leg","q1bike","q1wheel",
 #: List of files which are processed as objects
 LGR_OBJECT_NAME=["qexit","qkiller","qfood1","qfood2","qfood3","qfood4",
      "qfood5","qfood6","qfood7","qfood8","qfood9"]
+
+#: List of food objects
+LGR_FOOD_NAME=["qfood1","qfood2","qfood3","qfood4",
+     "qfood5","qfood6","qfood7","qfood8","qfood9"] 
      
 #: List of files which must be included to produce a valid lgr file
 LGR_MANDATORY_FILES=["q1body","q1thigh","q1leg","q1bike","q1wheel",
