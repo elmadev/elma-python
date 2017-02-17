@@ -174,7 +174,7 @@ def check_LGR_error(lgro,palette=None):
                 message.append([ERR_SMALL_IMAGE_ONLY,lgro,"%s must have dimensions at most 255x255, but the dimensions are %sx%s"%(lgro.name,lgro.img.width,lgro.img.height)])
             if(lgro.is_valid_palette_image()):
                 if(palette and not(is_mask) and (lgro.get_palette()!=palette)):
-                    message.append([WARN_PALETTE_MISMATCH,lgro,"%s's palette does not match the LGR's palette!"%(lgro.name)])
+                    message.append([WARN_PALETTE_MISMATCH,lgro,"Warning: %s's palette does not match the LGR's palette!"%(lgro.name)])
             else:
                 message.append([ERR_INVALID_PALETTE,lgro,"%s has an invalid palette"%(lgro.name)])
             if(namelower=="qcolors"):
