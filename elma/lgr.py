@@ -115,10 +115,7 @@ class LGR_Image(object):
         """
         Saves the image as a .pcx file
         """
-        if(self.is_valid_palette_image()):
-            self.img.save(file,"pcx")
-        else:
-            raise ValueError("only P mode images with a palette of 256 colors can be saved as a .pcx files. Use convert_palette_image() first")
+        self.img.save(file,"pcx")
     
     def get_default_palette():
         """
