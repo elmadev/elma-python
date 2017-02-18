@@ -65,6 +65,20 @@ with open('mylevel.lev', 'w') as f:
     f.write(pack(level))
 ```
 
+## Development setup
+
+```
+virtualenv venv
+. venv/bin/acivate
+pip install -r requirements.txt
+```
+
+## Running tests
+
+```
+python -m unittest
+```
+
 ## Contributing
 
 Pull requests welcome!

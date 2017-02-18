@@ -10,13 +10,11 @@ from PIL import Image
 from PIL import ImageDraw
 import os
 
-#import sys
-#sys.path.insert(0, os.path.abspath('..'))
 
 class TestLGR(unittest.TestCase):
     def test_LGR_Image(self):
         #Test get_palette()
-        with Image.open('files/barrel.pcx') as f:
+        with Image.open('tests/files/barrel.pcx') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.get_palette(),LGR_DEFAULT_PALETTE)
         
@@ -48,43 +46,43 @@ class TestLGR(unittest.TestCase):
         self.assertEqual(lgrimg.is_special(),True)
         
         #Test is_valid_palette_image()
-        with Image.open('files/barrel.pcx') as f:
+        with Image.open('tests/files/barrel.pcx') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.is_valid_palette_image(),True)
-        with Image.open('files/barrel.bmp') as f:
+        with Image.open('tests/files/barrel.bmp') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.is_valid_palette_image(),True)
-        with Image.open('files/barrelgrayscale.bmp') as f:
+        with Image.open('tests/files/barrelgrayscale.bmp') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.is_valid_palette_image(),False)
-        with Image.open('files/barrelrgb.png') as f:
+        with Image.open('tests/files/barrelrgb.png') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.is_valid_palette_image(),False)
-        with Image.open('files/barrel_partial_palette.pcx') as f:
+        with Image.open('tests/files/barrel_partial_palette.pcx') as f:
             lgrimg=LGR_Image('barrel',f)
             self.assertEqual(lgrimg.is_valid_palette_image(),True)
 
         #Test convert_palette_image()
-        with Image.open('files/barrelrgb.png') as f:
+        with Image.open('tests/files/barrelrgb.png') as f:
             lgrimg=LGR_Image('barrel',f)
             lgrimg.img=lgrimg.convert_palette_image(palette_info=LGR_DEFAULT_PALETTE,dither=False)
-            os.makedirs(os.path.dirname("files/result/barrelrgb2pal.pcx"), exist_ok=True)
-            lgrimg.save_PCX("files/result/barrelrgb2pal.pcx")
-            with Image.open('files/barrel.pcx') as g:
+            os.makedirs(os.path.dirname("tests/files/result/barrelrgb2pal.pcx"), exist_ok=True)
+            lgrimg.save_PCX("tests/files/result/barrelrgb2pal.pcx")
+            with Image.open('tests/files/barrel.pcx') as g:
                 self.assertEqual(lgrimg.img.mode,g.mode)
                 self.assertEqual(lgrimg.img.size,g.size)
                 self.assertEqual(lgrimg.img.getpalette(),g.getpalette())
                 self.assertEqual(lgrimg.img.tobytes(),g.tobytes())
-        with Image.open('files/woman.png') as f:
+        with Image.open('tests/files/woman.png') as f:
             lgrimg=LGR_Image('woman',f)
             lgrimg.img=lgrimg.convert_palette_image(LGR_DEFAULT_PALETTE,True)
-            lgrimg.save_PCX('files/result/woman.pcx')
+            lgrimg.save_PCX('tests/files/result/woman.pcx')
             self.assertEqual(lgrimg.img.getpalette(),LGR_DEFAULT_PALETTE)
-        with Image.open('files/barrel_partial_palette.pcx') as f:
+        with Image.open('tests/files/barrel_partial_palette.pcx') as f:
             lgrimg=LGR_Image('barrel',f)
             lgrimg.img=lgrimg.convert_palette_image(palette_info=LGR_DEFAULT_PALETTE,dither=False)
-            lgrimg.save_PCX("files/result/barrel_partial_to_full_palette.pcx")
-            with Image.open('files/barrel.pcx') as g:
+            lgrimg.save_PCX("tests/files/result/barrel_partial_to_full_palette.pcx")
+            with Image.open('tests/files/barrel.pcx') as g:
                 self.assertEqual(lgrimg.img.mode,g.mode)
                 self.assertEqual(lgrimg.img.size,g.size)
                 self.assertEqual(lgrimg.img.getpalette(),g.getpalette())
@@ -94,10 +92,10 @@ class TestLGR(unittest.TestCase):
         self.assertEqual(LGR_Image.get_default_palette(),LGR_DEFAULT_PALETTE)
         
         #Test packing and unpacking
-        lgr1=unpack_LGR('files/default.lgr')
-        with open('files/result/default.lgr','wb') as f:
+        lgr1=unpack_LGR('tests/files/default.lgr')
+        with open('tests/files/result/default.lgr','wb') as f:
             f.write(pack_LGR(lgr1))
-        lgr2=unpack_LGR('files/result/default.lgr') #not comparing binaries here because my script changes pcx header & compresses a bit better than original .pcx files
+        lgr2=unpack_LGR('tests/files/result/default.lgr') #not comparing binaries here because my script changes pcx header & compresses a bit better than original .pcx files
         self.assertEqual(lgr1.palette,lgr2.palette)
         for k in range(len(lgr1.images)):
             self.assertEqual(lgr1.images[k],lgr2.images[k])
@@ -264,7 +262,7 @@ class TestLGR(unittest.TestCase):
             draw.line([i,0,sizing-1,sizing-1-i],fill=201,width=1)
             draw.line([0,i,sizing-1-i,sizing-1],fill=201,width=1)
         del draw
-        imgt.save("files/result/err_file_too_large.pcx","pcx")
+        imgt.save("tests/files/result/err_file_too_large.pcx","pcx")
         lgr1.images[-1].img=imgt
         self.assertEqual(check_LGR_error(lgr1)[0][0],elma.error.ERR_FILE_TOO_LARGE)
         del lgr1.images[-1]
@@ -318,5 +316,3 @@ class TestLGR(unittest.TestCase):
         lgr1.images[index].img=None
         self.assertEqual(check_LGR_error(lgr1)[0][0],elma.error.ERR_IMG_MISSING)
         lgr1.images[index].img=img_temp
-
-#unittest.main()
