@@ -10,5 +10,8 @@ setup(
     maintainer_email='sigvefarstad@gmail.com',
     description='Elma Python Library.',
     test_suite="tests",
-    packages=['elma']
+    packages=['elma'],
+    install_requires=[
+        'pillow==4.0.0',
+    ],
 )
