@@ -171,11 +171,10 @@ class LGR_Image(object):
         self.name = name
         self.img = img
         self.padding = padding
-        if(self.is_in_pictures_lst()):
-            self.image_type = image_type
-            self.default_distance = default_distance
-            self.default_clipping = default_clipping
-            self.transparency = transparency
+        self.image_type = image_type
+        self.default_distance = default_distance
+        self.default_clipping = default_clipping
+        self.transparency = transparency
 
     def __repr__(self):
         if(self.is_in_pictures_lst()):
