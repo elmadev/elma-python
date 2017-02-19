@@ -6,7 +6,7 @@ import unittest
 class TestReplayPacking(unittest.TestCase):
 
     def test_packing(self):
-        with open('tests/test.rec', 'rb') as f:
+        with open('tests/files/test.rec', 'rb') as f:
             packed_replay = f.read()
             replay = unpack_replay(packed_replay)
             self.assertEqual(False, replay.is_multi)

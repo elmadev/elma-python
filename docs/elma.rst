@@ -12,6 +12,22 @@ elma.constants module
     :undoc-members:
     :show-inheritance:
 
+elma.error module
+------------------
+
+.. automodule:: elma.error
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+elma.lgr module
+------------------
+
+.. automodule:: elma.lgr
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 elma.models module
 ------------------
 
