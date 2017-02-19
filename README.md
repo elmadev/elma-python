@@ -70,13 +70,22 @@ with open('mylevel.lev', 'w') as f:
 ```
 virtualenv venv
 . venv/bin/acivate
-pip install -r requirements.txt
+make setup
 ```
 
 ## Running tests
 
 ```
 python -m unittest
+make test
+```
+
+## Linting
+
+To lint the project, do:
+
+```
+make lint
 ```
 
 ## Contributing

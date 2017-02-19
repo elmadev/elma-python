@@ -1,8 +1,8 @@
 try:
     bytes('A', 'latin1')
 except TypeError:
-    bytes = lambda a, b: a
-    chr = lambda a: a if type(a) == str else chr(a)
+    bytes = lambda a, b: a  # noqa
+    chr = lambda a: a if type(a) == str else chr(a)  # noqa
 
 
 def null_padded(string, length):
