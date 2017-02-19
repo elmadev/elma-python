@@ -318,7 +318,5 @@ class TestLGR(unittest.TestCase):
         lgr1.images[index].img=None
         self.assertEqual(check_LGR_error(lgr1)[0][0],elma.error.ERR_IMG_MISSING)
         lgr1.images[index].img=img_temp
-        
-        print(check_LGR_error(lgr1))
 
 #unittest.main()
