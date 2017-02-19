@@ -8,6 +8,7 @@ import unittest
 from PIL import Image
 from PIL import ImageDraw
 import os
+import shutil
 
 
 class TestLGR(unittest.TestCase):
@@ -406,3 +407,6 @@ class TestLGR(unittest.TestCase):
         self.assertEqual(check_LGR_error(lgr1)[0][0],
                          elma.error.ERR_IMG_MISSING)
         lgr1.images[index].img = img_temp
+
+        # Cleanup
+        shutil.rmtree("tests/files/result")
