@@ -3,6 +3,7 @@ from elma.constants import LGR_DEFAULT_PALETTE
 from elma.constants import LGR_END_OF_FILE
 from elma.constants import LGR_FOOD_NAME
 from elma.constants import LGR_NOT_IN_PICTURES_LST
+from elma.constants import LGR_OBJECT_NAME
 from elma.constants import LGR_PCX_PADDING
 from elma.constants import LGR_PICTURES_LST_ID
 from elma.utils import null_padded
@@ -153,6 +154,12 @@ class LGR_Image(object):
         Checks if the current object name is qfood*
         """
         return (self.name.lower() in LGR_FOOD_NAME)
+
+    def is_object(self):
+        """
+        Checks if the current name is a recognized object (qfood*, qexit, qkiller)
+        """
+        return (self.name.lower() in LGR_OBJECT_NAME)
 
     def is_special(self):
         """

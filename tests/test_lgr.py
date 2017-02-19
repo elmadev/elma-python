@@ -18,31 +18,42 @@ class TestLGR(unittest.TestCase):
             lgrimg = LGR_Image('barrel', f)
             self.assertEqual(lgrimg.get_palette(), LGR_DEFAULT_PALETTE)
 
-        # Test is_in_pictures_lst(), is_qup_qdown(), is_food(), is_special()
+        # Test is_in_pictures_lst(), is_qup_qdown(), is_food(), is_object(), is_special()
         lgrimg = LGR_Image('barrel')
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), False)
         lgrimg.name = "q1body"
         self.assertEqual(lgrimg.is_in_pictures_lst(), False)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg.name = "Q1BODY"
         self.assertEqual(lgrimg.is_in_pictures_lst(), False)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg.name = "qFoOd5"
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), True)
+        self.assertEqual(lgrimg.is_object(), True)
+        self.assertEqual(lgrimg.is_special(), True)
+        lgrimg.name = "qEXit"
+        self.assertEqual(lgrimg.is_in_pictures_lst(), False)
+        self.assertEqual(lgrimg.is_qup_qdown(), False)
+        self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), True)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg.name = "qUp_xS"
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), True)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
 
         # Test is_valid_palette_image()
@@ -256,6 +267,12 @@ class TestLGR(unittest.TestCase):
         self.assertEqual(check_LGR_error(lgr1)[0][0],
                          elma.error.WARN_GRASS_HEIGHT_TOO_SMALL)
         # ERR_OBJ_WIDTH_INVALID
+        tempimages = lgr1.images[:]
+        del lgr1.images[lgr1.find_LGR_Image("qexit")]
+        lgr1.images[-1].name = "qeXit"
+        self.assertEqual(check_LGR_error(lgr1)[0][0],
+                         elma.error.ERR_OBJ_WIDTH_INVALID)
+        lgr1.images = tempimages[:]
         lgr1.images[-1].name = "qFOOd3"
         self.assertEqual(check_LGR_error(lgr1)[0][0],
                          elma.error.ERR_OBJ_WIDTH_INVALID)
