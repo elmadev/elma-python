@@ -31,9 +31,10 @@ class LGR_Image(object):
         default_clipping (int): The default clipping of a picture or texture. Should be one of:
             LGR_Image.CLIPPING_U, LGR_Image.CLIPPING_G, LGR_Image.CLIPPING_S. Only used if **is_in_pictures_lst()=True**
         transparency (int): The pixel corresponding to the color or item in a palette that should
-            be transperant. Should be one of: LGR_Image.TRANSPARENCY_NONE,
+            be transperant. Should be one of: LGR_Image.TRANSPARENCY_PAL_ZERO,
             LGR_Image.TRANSPARENCY_TOPLEFT, LGR_Image.TRANSPARENCY_TOPRIGHT,
-            LGR_Image.TRANSPARENCY_BOTTOMLEFT, LGR_Image.TRANSPARENCY_BOTTOMRIGHT. Only used if **is_in_pictures_lst()=True**
+            LGR_Image.TRANSPARENCY_BOTTOMLEFT, LGR_Image.TRANSPARENCY_BOTTOMRIGHT. Only used if **is_in_pictures_lst()=True**.
+            TRANSPARENCY_PAL_ZERO indicates the the palette index 0 is selected as the transparent color.
         padding (int[7]): Each LGR entry has 7 bytes of padding that are unused. This can
             in theory be used to store extra information.
     """
@@ -44,7 +45,7 @@ class LGR_Image(object):
     PICTURE = 100
     TEXTURE = 101
     MASK=102
-    TRANSPARENCY_NONE=11
+    TRANSPARENCY_PAL_ZERO=11
     TRANSPARENCY_TOPLEFT=12
     TRANSPARENCY_TOPRIGHT=13
     TRANSPARENCY_BOTTOMLEFT=14
@@ -53,7 +54,7 @@ class LGR_Image(object):
     def is_in_pictures_lst(self):
         """
         Determines whether image with the given name appears in pictures.lst (i.e. has the extra variables image_type, default_distance, default_clipping, transparency)
-        Returns True if the image appears in pictures.lst, meaning the extra variables may be used.
+        Returns True if the image appears in pictures.lst, meaning the extra variables may be used. See also is_special().
         """
         return not(self.name.lower() in LGR_NOT_IN_PICTURES_LST)
 
@@ -136,6 +137,12 @@ class LGR_Image(object):
         """
         return (self.name.lower() in LGR_FOOD_NAME)
     
+    def is_special(self):
+        """
+        Checks if the current object is a special object (i.e. treated differently from normal images, so that image_type, default_distance, default_clipping, trasparency either don't exist or are ignored by elma.exec
+        """
+        return not(self.is_in_pictures_lst()) or self.is_food() or self.is_qup_qdown()
+    
     def __init__(self, name, img=None, image_type=PICTURE, default_distance=500,
                 default_clipping=CLIPPING_S, transparency=TRANSPARENCY_TOPLEFT, padding=LGR_PCX_PADDING):
         self.name=name
@@ -190,6 +197,15 @@ class LGR(object):
         else:
             self.palette=palette
         
+    def find_LGR_Image(self,fname):
+        """
+        Searches for an LGR_Image with the name of "fname" and returns the index number in the list of LGR.images. Case-insensitive. Returns False if not found.
+        """
+        fname=fname.lower()
+        for i in range(len(self.images)):
+            if(self.images[i].name.lower()==fname):
+                return i
+        return False
 
     def __repr__(self):
         return (('LGR(images: %s)') %
