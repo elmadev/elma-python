@@ -65,6 +65,29 @@ with open('mylevel.lev', 'w') as f:
     f.write(pack(level))
 ```
 
+## Development setup
+
+```
+virtualenv venv
+. venv/bin/acivate
+make setup
+```
+
+## Running tests
+
+```
+python -m unittest
+make test
+```
+
+## Linting
+
+To lint the project, do:
+
+```
+make lint
+```
+
 ## Contributing
 
 Pull requests welcome!

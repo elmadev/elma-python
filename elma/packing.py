@@ -25,9 +25,9 @@ try:
     PY_VERSION = 3
 except TypeError:
     PY_VERSION = 2
-    bytes = lambda a, b: a
+    bytes = lambda a, b: a  # noqa
     _chr = chr
-    chr = lambda a: a if type(a) == str else _chr(a)
+    chr = lambda a: a if type(a) == str else _chr(a) # noqa
 
 packers = {
     'Point': lambda point:
