@@ -95,9 +95,6 @@ class TestLGR(unittest.TestCase):
                 self.assertEqual(lgrimg.img.getpalette(), g.getpalette())
                 self.assertEqual(lgrimg.img.tobytes(), g.tobytes())
 
-        # Test get_default_palette
-        self.assertEqual(LGR_Image.get_default_palette(), LGR_DEFAULT_PALETTE)
-
         # Test packing and unpacking
         lgr1 = unpack_LGR('tests/files/default.lgr')
         with open('tests/files/result/default.lgr', 'wb') as f:

@@ -131,12 +131,6 @@ class LGR_Image(object):
         """
         self.img.save(file, "pcx")
 
-    def get_default_palette():
-        """
-        Returns the default palette used in default.lgr (LGR_DEFAULT_PALETTE)
-        """
-        return LGR_DEFAULT_PALETTE
-
     def is_qup_qdown(self):
         """
         Checks if the current object name qualifies as a qup_ or qdown_ object
