@@ -2,3 +2,5 @@
 docs/_build/
 dist/
 elma.egg-info/
+venv/
+.*.swp
