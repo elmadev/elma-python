@@ -110,6 +110,9 @@ class TestLGR(unittest.TestCase):
         index = lgr1.find_LGR_Image("q2THiGh")
         self.assertEqual(index, 3)  # 4th entry in default.lgr is Q2THIGH.pcx
 
+        self.assertRaises(ValueError,
+                          lambda: lgr1.find_LGR_Image("does not exist"))
+
         # TEST ERROR CHECKING
         self.assertEqual(check_LGR_error(lgr1), [])
         # ERR_LGR_INVALID_PALETTE

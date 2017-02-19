@@ -218,14 +218,14 @@ class LGR(object):
     def find_LGR_Image(self, fname):
         """
         Searches for an LGR_Image with the name of "fname" and returns the
-        index number in the list of LGR.images. Case-insensitive. Returns False
-        if not found.
+        index number in the list of LGR.images. Case-insensitive. Returns
+        ValueError if not found.
         """
         fname = fname.lower()
         for i in range(len(self.images)):
             if(self.images[i].name.lower() == fname):
                 return i
-        return False
+        raise ValueError('\'%s\' not in LGR.images' % fname)
 
     def __repr__(self):
         return (('LGR(images: %s)') %
