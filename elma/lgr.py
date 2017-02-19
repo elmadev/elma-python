@@ -95,24 +95,11 @@ class LGR_Image(object):
                 default palette from default.lgr.
             dither (bool): Whether to dither the image during conversion
         """
-
-        # Modified version of Image.quantize() to avoid forcing dithering and
-        # allow "P" files to be converted
-        # https://github.com/python-pillow/Pillow/blob/9c4eafc1884d1f6dc4bd299d3a1108e3954e2eea/PIL/Image.py
-
-        self.img.load()
-
-        palette = Image.new('P', [1, 1])
+        palette = Image.new('P', (1, 1))
         palette.putpalette(palette_info[:], 'RGB')
-
-        if(self.img.mode == 'RGB' or self.img.mode == 'L'):
-            target = self.img
-        elif(self.img.mode == 'P'):
-            target = self.img.convert(mode='RGB')
-        else:
-            raise ValueError('Only RGB, P or L mode images '
-                             'can be quantized to a palette.')
-        self.img = self.img._new(target.im.convert('P', dither, palette.im))
+        self.img = self.img._new(
+            self.img.convert(
+                mode='RGB').im.convert('P', dither, palette.im))
 
     def is_valid_palette_image(self):
         """
@@ -122,11 +109,11 @@ class LGR_Image(object):
                 self.img.palette.mode == 'RGB' and
                 len(self.get_palette()) == 768)
 
-    def save_PCX(self, file_reference):
+    def save_PCX(self, filename):
         """
-        Writes the image as a .pcx file to `file_reference`.
+        Writes the image as a .pcx file to `filename`.
         """
-        self.img.save(file_reference, 'pcx')
+        self.img.save(filename, 'pcx')
 
     def is_qup_qdown(self):
         """
@@ -205,8 +192,10 @@ class LGR(object):
             default palette from default.lgr
     """
 
-    def __init__(self, palette=LGR_DEFAULT_PALETTE):
+    def __init__(self, palette=None):
         self.images = []
+        if not palette:
+            palette = LGR_DEFAULT_PALETTE[:]
         self.palette = palette
 
     def find_LGR_Image(self, filename):
