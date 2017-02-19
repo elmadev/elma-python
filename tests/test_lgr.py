@@ -65,7 +65,7 @@ class TestLGR(unittest.TestCase):
         # Test convert_palette_image()
         with Image.open('tests/files/barrelrgb.png') as f:
             lgrimg = LGR_Image('barrel', f)
-            lgrimg.img = lgrimg.convert_palette_image(
+            lgrimg.convert_palette_image(
                 palette_info=LGR_DEFAULT_PALETTE,
                 dither=False)
             os.makedirs(
@@ -79,13 +79,13 @@ class TestLGR(unittest.TestCase):
                 self.assertEqual(lgrimg.img.tobytes(), g.tobytes())
         with Image.open('tests/files/woman.png') as f:
             lgrimg = LGR_Image('woman', f)
-            lgrimg.img = lgrimg.convert_palette_image(
+            lgrimg.convert_palette_image(
                 LGR_DEFAULT_PALETTE, True)
             lgrimg.save_PCX('tests/files/result/woman.pcx')
             self.assertEqual(lgrimg.img.getpalette(), LGR_DEFAULT_PALETTE)
         with Image.open('tests/files/barrel_partial_palette.pcx') as f:
             lgrimg = LGR_Image('barrel', f)
-            lgrimg.img = lgrimg.convert_palette_image(
+            lgrimg.convert_palette_image(
                 palette_info=LGR_DEFAULT_PALETTE, dither=False)
             lgrimg.save_PCX(
                 "tests/files/result/barrel_partial_to_full_palette.pcx")

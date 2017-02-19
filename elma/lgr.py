@@ -85,7 +85,7 @@ class LGR_Image(object):
 
     def convert_palette_image(self, palette_info=-1, dither=False):
         """
-        Takes any image and converts the image into an appropriate palette
+        Converts the current image into an appropriate palette
         format, keeping the color as close to the original as possible.
 
         Arguments:
@@ -93,10 +93,6 @@ class LGR_Image(object):
                 obtained from LGR_Image.get_palette().  Inputting -1 will use
                 the default palette from default.lgr
             dither (bool): Whether to dither the image during conversion
-
-        Returns an image to be stored in LGR_Image.img
-
-        e.g. x.img=x.convert_palette_image(-1,False)
         """
 
         # Modified version of Image.quantize() to avoid forcing dithering and
@@ -118,8 +114,8 @@ class LGR_Image(object):
             raise ValueError(
                 "only RGB, P or L mode images can be quantized to a palette"
                 )
-        im = target.im.convert("P", 1 if dither else 0, palette.im)
-        return self.img._new(im)
+        self.img = self.img._new(
+            target.im.convert("P", 1 if dither else 0, palette.im))
 
     def is_valid_palette_image(self):
         """
