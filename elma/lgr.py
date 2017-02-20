@@ -131,7 +131,8 @@ class LGR_Image(object):
 
     def is_object(self):
         """
-        Checks if the current name is a recognized object (qfood*, qexit, qkiller)
+        Checks if the current name is a recognized object (qfood*, qexit,
+        qkiller)
         """
         return (self.name.lower() in LGR_OBJECT_NAME)
 

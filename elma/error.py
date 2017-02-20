@@ -1,7 +1,6 @@
 from elma.lgr import LGR_Image
 from elma.constants import LGR_MANDATORY_FILES
 from elma.constants import LGR_LIMITED_SIZE_FILES
-from elma.constants import LGR_OBJECT_NAME
 import io
 
 LGR_PCX_MIN = 10    # unused as practically never important
