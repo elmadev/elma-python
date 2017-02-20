@@ -33,26 +33,37 @@ class TestLGR(unittest.TestCase):
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), False)
         lgrimg = LGR_Image('q1body')
         self.assertEqual(lgrimg.is_in_pictures_lst(), False)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg = LGR_Image('Q1BODY')
         self.assertEqual(lgrimg.is_in_pictures_lst(), False)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg = LGR_Image('qFoOd5')
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), False)
         self.assertEqual(lgrimg.is_food(), True)
+        self.assertEqual(lgrimg.is_object(), True)
+        self.assertEqual(lgrimg.is_special(), True)
+        lgrimg.name = "qEXit"
+        self.assertEqual(lgrimg.is_in_pictures_lst(), False)
+        self.assertEqual(lgrimg.is_qup_qdown(), False)
+        self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), True)
         self.assertEqual(lgrimg.is_special(), True)
         lgrimg = LGR_Image('qUp_xS')
         self.assertEqual(lgrimg.is_in_pictures_lst(), True)
         self.assertEqual(lgrimg.is_qup_qdown(), True)
         self.assertEqual(lgrimg.is_food(), False)
+        self.assertEqual(lgrimg.is_object(), False)
         self.assertEqual(lgrimg.is_special(), True)
 
     def test_is_valid_palette_image(self):
@@ -278,8 +289,15 @@ class TestLGRErrors(unittest.TestCase):
                          elma.error.WARN_GRASS_HEIGHT_TOO_SMALL)
 
     def test_error_obj_width_invalid(self):
-        imgt = Image.new("P", (41, 40), 0)
+        imgt = Image.new('P', (41, 40), 0)
         imgt.putpalette(self.lgr.palette)
+        qexit_index = self.lgr.find_LGR_Image("qexit")
+        original_qexit_image = self.lgr.images[qexit_index].img
+        self.lgr.images[qexit_index].img = imgt
+        self.lgr.images[qexit_index].name = "qeXit"
+        self.assertEqual(check_LGR_error(self.lgr)[0][0],
+                         elma.error.ERR_OBJ_WIDTH_INVALID)
+        self.lgr.images[qexit_index].img = original_qexit_image
         self.lgr.images[-1].name = "qFOOd3"
         self.lgr.images[-1].img = imgt
         self.assertEqual(check_LGR_error(self.lgr)[0][0],

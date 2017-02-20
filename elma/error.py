@@ -192,7 +192,38 @@ def check_LGR_error(lgro, palette=None):
                 "%s's padding is invalid (must be an "
                 "array of 7 ints in range (0-255))" % lgro.name])
         namelower = lgro.name.lower()
-        if(lgro.is_in_pictures_lst()):
+        if(lgro.is_object()):
+            if(lgro.img.height != LGR_OBJ_HEIGHT):
+                message.append([
+                    WARN_OBJ_HEIGHT_INVALID,
+                    lgro,
+                    "Warning: %s should have a height of %s, "
+                    "but the height is %s. If the height is "
+                    "smaller, the program might crash unexpectedly. "
+                    "If the height is larger, the additional columns "
+                    "will be ignored." % (
+                        lgro.name,
+                        LGR_OBJ_HEIGHT,
+                        lgro.img.height)])
+            if(lgro.img.width % LGR_OBJ_WIDTH != 0):
+                message.append([
+                    ERR_OBJ_WIDTH_INVALID,
+                    lgro,
+                    "As %s is an object, the width (%s) must be a "
+                    "multiple of %s" % (
+                        lgro.name,
+                        lgro.img.width,
+                        LGR_OBJ_WIDTH)])
+            if(lgro.img.width > LGR_OBJ_WIDTH*LGR_OBJ_FRAMES_MAX):
+                message.append([
+                    ERR_OBJ_TOO_WIDE,
+                    lgro,
+                    "%s must have a width at most %s, "
+                    "but the width is %s" % (
+                        lgro.name,
+                        lgro.img.width,
+                        LGR_OBJ_WIDTH * LGR_OBJ_FRAMES_MAX)])
+        elif(lgro.is_in_pictures_lst()):
                 if(lgro.is_qup_qdown()):
                     if(lgro.img.height < LGR_WARNING_GRASS_HEIGHT_MIN):
                         message.append([
@@ -203,38 +234,6 @@ def check_LGR_error(lgro, palette=None):
                                 lgro.name,
                                 LGR_WARNING_GRASS_HEIGHT_MIN,
                                 lgro.img.height)])
-                elif((namelower in LGR_OBJECT_NAME) and
-                     namelower[:5] == "qfood"):
-                    if(lgro.img.height != LGR_OBJ_HEIGHT):
-                        message.append([
-                            WARN_OBJ_HEIGHT_INVALID,
-                            lgro,
-                            "Warning: %s should have a height of %s, "
-                            "but the height is %s. If the height is "
-                            "smaller, the program might crash unexpectedly. "
-                            "If the height is larger, the additional columns "
-                            "will be ignored." % (
-                                lgro.name,
-                                LGR_OBJ_HEIGHT,
-                                lgro.img.height)])
-                    if(lgro.img.width % LGR_OBJ_WIDTH != 0):
-                        message.append([
-                            ERR_OBJ_WIDTH_INVALID,
-                            lgro,
-                            "As %s is an object, the width (%s) must be a "
-                            "multiple of %s" % (
-                                lgro.name,
-                                lgro.img.width,
-                                LGR_OBJ_WIDTH)])
-                    if(lgro.img.width > LGR_OBJ_WIDTH*LGR_OBJ_FRAMES_MAX):
-                        message.append([
-                            ERR_OBJ_TOO_WIDE,
-                            lgro,
-                            "%s must have a width at most %s, "
-                            "but the width is %s" % (
-                                lgro.name,
-                                lgro.img.width,
-                                LGR_OBJ_WIDTH * LGR_OBJ_FRAMES_MAX)])
                 else:
                     if(100 > lgro.image_type < 102):
                         message.append([
