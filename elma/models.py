@@ -1,5 +1,6 @@
 from abc import ABCMeta
 import random
+from math import cos, sin
 
 
 class Point(object):
@@ -128,6 +129,55 @@ class Polygon(object):
 
     def __repr__(self):
         return 'Polygon(points: %s, grass: %s)' % (self.points, self.grass)
+
+    def move_by(self, x=0, y=0):
+        self.points = [Point(p.x + x, p.y + y) for p in self.points]
+
+    def mirror(self):
+        mirror_axis = (self.rightmost_point().x + self.leftmost_point().x) / 2.0
+        for p in self.points:
+            p.x = 2 * mirror_axis - p.x
+
+    def flip(self):
+        flip_axis = (self.highest_point().y + self.lowest_point().y) / 2.0
+        for p in self.points:
+            p.y = 2 * flip_axis - p.y
+
+    def rotate(self, angle, fixed_point=None):
+        if fixed_point is None:
+            fixed_point = self.center_point()
+        for p in self.points:
+            norm_x = p.x - fixed_point.x
+            norm_y = p.y - fixed_point.y
+            p.x = norm_x * cos(angle) - norm_y * sin(angle) + fixed_point.x
+            p.y = norm_x * sin(angle) + norm_y * cos(angle) + fixed_point.y
+
+    def scale(self, scaler):
+        fixed_point = Point(self.leftmost_point().x, self.lowest_point().y)
+        for p in self.points:
+            p.x = scaler * (p.x - fixed_point.x) + fixed_point.x
+            p.y = scaler * (p.y - fixed_point.y) + fixed_point.y
+
+    def center_point(self):
+        center = Point(0.0, 0.0)
+        for p in self.points:
+            center.x += p.x
+            center.y += p.y
+        center.x /= len(self.points)
+        center.y /= len(self.points)
+        return center
+
+    def rightmost_point(self):
+        return max(self.points, key=lambda p: p.x)
+
+    def leftmost_point(self):
+        return min(self.points, key=lambda p: p.x)
+
+    def highest_point(self):
+        return max(self.points, key=lambda p: p.y)
+
+    def lowest_point(self):
+        return min(self.points, key=lambda p: p.y)
 
 
 class Level(object):
