@@ -134,7 +134,8 @@ class Polygon(object):
         self.points = [Point(p.x + x, p.y + y) for p in self.points]
 
     def mirror(self):
-        mirror_axis = (self.rightmost_point().x + self.leftmost_point().x) / 2.0
+        mirror_axis = (self.rightmost_point().x +
+                       self.leftmost_point().x) / 2.0
         for p in self.points:
             p.x = 2 * mirror_axis - p.x
 
