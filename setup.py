@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='elma',
-    version='0.7',
+    version='0.8.0',
     url='http://github.com/sigvef/elma/',
     license='MIT',
     maintainer='Sigve Sebastian Farstad',
