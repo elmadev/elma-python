@@ -284,7 +284,7 @@ class Event(object):
         self.time = 0
 
     def __repr__(self):
-        return 'Event(time: %s)' % self.time_of_event
+        return 'Event(time: %s)' % self.time
 
 
 class ObjectTouchEvent(Event):
@@ -304,7 +304,7 @@ class TurnEvent(Event):
     Represent a single replay turn event.
     """
     def __repr__(self):
-        return 'TurnEvent(time: %s)' % self.time_of_event
+        return 'TurnEvent(time: %s)' % self.time
 
 
 class LeftVoltEvent(Event):
@@ -312,7 +312,7 @@ class LeftVoltEvent(Event):
     Represent a single replay left volt event.
     """
     def __repr__(self):
-        return 'LeftVoltEvent(time: %s)' % self.time_of_event
+        return 'LeftVoltEvent(time: %s)' % self.time
 
 
 class RightVoltEvent(Event):
@@ -320,7 +320,7 @@ class RightVoltEvent(Event):
     Represent a single replay right volt event.
     """
     def __repr__(self):
-        return 'RightVoltEvent(time: %s)' % self.time_of_event
+        return 'RightVoltEvent(time: %s)' % self.time
 
 
 class GroundTouchAEvent(Event):
@@ -331,7 +331,7 @@ class GroundTouchAEvent(Event):
         self.value = 0
 
     def __repr__(self):
-        return 'GroundTouchAEvent(time: %s)' % self.time_of_event
+        return 'GroundTouchAEvent(time: %s)' % self.time
 
 
 class GroundTouchBEvent(Event):
@@ -342,7 +342,7 @@ class GroundTouchBEvent(Event):
         self.value = 0
 
     def __repr__(self):
-        return 'GroundTouchBEvent(time: %s)' % self.time_of_event
+        return 'GroundTouchBEvent(time: %s)' % self.time
 
 
 class Replay(object):
