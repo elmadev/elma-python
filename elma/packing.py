@@ -262,22 +262,23 @@ def unpack_replay(data):
     number_of_replay_events = read_int32()
     for _ in range(number_of_replay_events):
         event_time = read_double()
-        event_type_1 = read_int32()
+        info = read_int16()
+        event_type_1 = read_int16()
         event_type_2 = read_int32()
 
-        if event_type_2 == 0:
+        if event_type_1 == 0:
             event = ObjectTouchEvent()
-            event.object_number = event_type_1
-        elif event_type_1 == 393215 and event_type_2 == 1065185444:
+            event.object_number = info
+        elif event_type_1 == 5 and event_type_2 == 1065185444:
             event = TurnEvent()
-        elif event_type_1 == 524287 and event_type_2 == 1065185444:
+        elif event_type_1 == 7 and event_type_2 == 1065185444:
             event = LeftVoltEvent()
-        elif event_type_1 == 458751 and event_type_2 == 1065185444:
+        elif event_type_1 == 6 and event_type_2 == 1065185444:
             event = RightVoltEvent()
-        elif event_type_1 == 131071:
+        elif event_type_1 == 1:
             event = GroundTouchAEvent()
             event.value = event_type_2
-        elif event_type_1 == 327679:
+        elif event_type_1 == 4:
             event = GroundTouchBEvent()
             event.value = event_type_2
 
@@ -300,27 +301,32 @@ def pack_replay(item):
 
     if isinstance(item, TurnEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 393215) +
+                struct.pack('h', -1) +
+                struct.pack('h', 5) +
                 struct.pack('I', 1065185444))
 
     if isinstance(item, LeftVoltEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 524287) +
+                struct.pack('h', -1) +
+                struct.pack('h', 7) +
                 struct.pack('I', 1065185444))
 
     if isinstance(item, RightVoltEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 458751) +
+                struct.pack('h', -1) +
+                struct.pack('h', 6) +
                 struct.pack('I', 1065185444))
 
     if isinstance(item, GroundTouchAEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 131071) +
+                struct.pack('h', -1) +
+                struct.pack('h', 1) +
                 struct.pack('I', item.value))
 
     if isinstance(item, GroundTouchBEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 327679) +
+                struct.pack('h', -1) +
+                struct.pack('h', 4) +
                 struct.pack('I', item.value))
 
     replay = item
