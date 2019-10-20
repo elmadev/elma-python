@@ -51,36 +51,53 @@ The above snippet defines a simple level that looks like this:
 ![](http://i.imgur.com/cl8SJgk.png)
 
 
-### Loading a level from file
+### Loading a level from a file
 ```python
-from elma.packing import unpack
+from elma.packing import unpack_level
 
-with open('mylevel.lev') as f:
-    level = unpack(f.read())
+with open('mylevel.lev', 'rb') as f:
+    level = unpack_level(f.read())
 ```
 
-### Saving a level to file
+### Saving a level to a file
 ```python
-from elma.packing import pack
+from elma.packing import pack_level
 
 level = ...
 
-with open('mylevel.lev', 'w') as f:
-    f.write(pack(level))
+with open('mylevel.lev', 'wb') as f:
+    f.write(pack_level(level))
+```
+
+### Loading a replay from a file
+```python
+from elma.packing import unpack_replay
+
+with open('myreplay.rec', 'rb') as f:
+    replay = unpack_replay(f.read())
+```
+
+### Saving a replay to a file
+```python
+from elma.packing import pack_replay
+
+replay = ...
+
+with open('myreplay.rec', 'wb') as f:
+    f.write(pack_replay(replay))
 ```
 
 ## Development setup
 
 ```
 virtualenv venv
-. venv/bin/acivate
+. venv/bin/activate
 make setup
 ```
 
 ## Running tests
 
 ```
-python -m unittest
 make test
 ```
 
