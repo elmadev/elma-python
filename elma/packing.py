@@ -4,7 +4,7 @@ from elma.constants import END_OF_REPLAY_FILE_MARKER
 from elma.constants import TOP10_MULTIPLAYER
 from elma.constants import TOP10_SINGLEPLAYER
 from elma.models import Frame
-from elma.models import GroundTouchAEvent
+from elma.models import GroundTouchEvent
 from elma.models import AppleTouchEvent
 from elma.models import LeftVoltEvent
 from elma.models import Level
@@ -276,7 +276,7 @@ def unpack_replay(data):
         elif event_type_1 == 6 and event_type_2 == 1065185444:
             event = RightVoltEvent()
         elif event_type_1 == 1:
-            event = GroundTouchAEvent()
+            event = GroundTouchEvent()
             event.value = event_type_2
         elif event_type_1 == 4:
             event = AppleTouchEvent()
@@ -316,7 +316,7 @@ def pack_replay(item):
                 struct.pack('h', 6) +
                 struct.pack('I', 1065185444))
 
-    if isinstance(item, GroundTouchAEvent):
+    if isinstance(item, GroundTouchEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 1) +

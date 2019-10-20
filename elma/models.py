@@ -323,15 +323,15 @@ class RightVoltEvent(Event):
         return 'RightVoltEvent(time: %s)' % self.time
 
 
-class GroundTouchAEvent(Event):
+class GroundTouchEvent(Event):
     """
-    Represent a single replay ground touch A event.
+    Represent a single replay ground touch event.
     """
     def __init__(self):
         self.value = 0
 
     def __repr__(self):
-        return 'GroundTouchAEvent(time: %s)' % self.time
+        return 'GroundTouchEvent(time: %s)' % self.time
 
 
 class AppleTouchEvent(Event):
