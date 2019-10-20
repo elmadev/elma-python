@@ -334,15 +334,12 @@ class GroundTouchAEvent(Event):
         return 'GroundTouchAEvent(time: %s)' % self.time
 
 
-class GroundTouchBEvent(Event):
+class AppleTouchEvent(Event):
     """
-    Represent a single replay ground touch B event.
+    Represent an apple touch event. This is always generated together with the ObjectTouchEvent when touching an apple.
     """
-    def __init__(self):
-        self.value = 0
-
     def __repr__(self):
-        return 'GroundTouchBEvent(time: %s)' % self.time
+        return 'AppleTouchEvent(time: %s)' % self.time
 
 
 class Replay(object):
