@@ -323,26 +323,23 @@ class RightVoltEvent(Event):
         return 'RightVoltEvent(time: %s)' % self.time
 
 
-class GroundTouchAEvent(Event):
+class GroundTouchEvent(Event):
     """
-    Represent a single replay ground touch A event.
-    """
-    def __init__(self):
-        self.value = 0
-
-    def __repr__(self):
-        return 'GroundTouchAEvent(time: %s)' % self.time
-
-
-class GroundTouchBEvent(Event):
-    """
-    Represent a single replay ground touch B event.
+    Represent a single replay ground touch event.
     """
     def __init__(self):
         self.value = 0
 
     def __repr__(self):
-        return 'GroundTouchBEvent(time: %s)' % self.time
+        return 'GroundTouchEvent(time: %s)' % self.time
+
+
+class AppleTouchEvent(Event):
+    """
+    Represent an apple touch event. This is always generated together with the ObjectTouchEvent when touching an apple.
+    """
+    def __repr__(self):
+        return 'AppleTouchEvent(time: %s)' % self.time
 
 
 class Replay(object):

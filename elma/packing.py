@@ -4,8 +4,8 @@ from elma.constants import END_OF_REPLAY_FILE_MARKER
 from elma.constants import TOP10_MULTIPLAYER
 from elma.constants import TOP10_SINGLEPLAYER
 from elma.models import Frame
-from elma.models import GroundTouchAEvent
-from elma.models import GroundTouchBEvent
+from elma.models import GroundTouchEvent
+from elma.models import AppleTouchEvent
 from elma.models import LeftVoltEvent
 from elma.models import Level
 from elma.models import Obj
@@ -262,24 +262,24 @@ def unpack_replay(data):
     number_of_replay_events = read_int32()
     for _ in range(number_of_replay_events):
         event_time = read_double()
-        event_type_1 = read_int32()
-        event_type_2 = read_int32()
+        info = read_int16()
+        event_type = read_int16()
+        event_sound_volume = read_float()
 
-        if event_type_2 == 0:
+        if event_type == 0:
             event = ObjectTouchEvent()
-            event.object_number = event_type_1
-        elif event_type_1 == 393215 and event_type_2 == 1065185444:
+            event.object_number = info
+        elif event_type == 5:
             event = TurnEvent()
-        elif event_type_1 == 524287 and event_type_2 == 1065185444:
+        elif event_type == 7:
             event = LeftVoltEvent()
-        elif event_type_1 == 458751 and event_type_2 == 1065185444:
+        elif event_type == 6:
             event = RightVoltEvent()
-        elif event_type_1 == 131071:
-            event = GroundTouchAEvent()
-            event.value = event_type_2
-        elif event_type_1 == 327679:
-            event = GroundTouchBEvent()
-            event.value = event_type_2
+        elif event_type == 1:
+            event = GroundTouchEvent()
+            event.value = event_sound_volume
+        elif event_type == 4:
+            event = AppleTouchEvent()
 
         event.time = event_time
         replay.events.append(event)
@@ -296,32 +296,37 @@ def pack_replay(item):
     if isinstance(item, ObjectTouchEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('I', item.object_number) +
-                struct.pack('I', 0))
+                struct.pack('f', 0))
 
     if isinstance(item, TurnEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 393215) +
-                struct.pack('I', 1065185444))
+                struct.pack('h', -1) +
+                struct.pack('h', 5) +
+                struct.pack('f', 0.99))
 
     if isinstance(item, LeftVoltEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 524287) +
-                struct.pack('I', 1065185444))
+                struct.pack('h', -1) +
+                struct.pack('h', 7) +
+                struct.pack('f', 0.99))
 
     if isinstance(item, RightVoltEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 458751) +
-                struct.pack('I', 1065185444))
+                struct.pack('h', -1) +
+                struct.pack('h', 6) +
+                struct.pack('f', 0.99))
 
-    if isinstance(item, GroundTouchAEvent):
+    if isinstance(item, GroundTouchEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 131071) +
-                struct.pack('I', item.value))
+                struct.pack('h', -1) +
+                struct.pack('h', 1) +
+                struct.pack('f', item.value))
 
-    if isinstance(item, GroundTouchBEvent):
+    if isinstance(item, AppleTouchEvent):
         return (struct.pack('d', item.time) +
-                struct.pack('I', 327679) +
-                struct.pack('I', item.value))
+                struct.pack('h', -1) +
+                struct.pack('h', 4) +
+                struct.pack('f', 0.99))
 
     replay = item
     if PY_VERSION == 2:
