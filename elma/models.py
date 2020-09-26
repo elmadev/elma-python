@@ -409,6 +409,7 @@ class ObjectTouchEvent(Event):
     Represent a single replay object touch event.
     """
     def __init__(self):
+        super().__init__()
         self.object_number = 0
 
     def __repr__(self):
@@ -445,6 +446,7 @@ class GroundTouchEvent(Event):
     Represent a single replay ground touch event.
     """
     def __init__(self):
+        super().__init__()
         self.value = 0
 
     def __repr__(self):
