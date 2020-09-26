@@ -8,7 +8,7 @@ from math import cos, sin
 
 class Point(object):
     """
-    Represent a single 2D point.
+    Represents a single 2D point.
 
     Attributes:
         x (float): The x-coordinate of the point.
@@ -27,12 +27,12 @@ class Point(object):
 
 class Obj(object):
     """
-    Represent an Elastomania level object, which can be one of: flower, food,
+    Represents an Elasto Mania level object, which can be one of: flower, food,
     killer, start.
 
     Attributes:
         point (Point): The 2D Point that represents the position of the object.
-            type (int): The type of the object, which should be one of:
+        type (int): The type of the object, which should be one of:
             Obj.FLOWER, Obj.FOOD, Obj.Killer, Obj.START.
         gravity (int): The gravity of the object, if the object is a food
             object. It should be one of: Obj.GRAVITY_NORMAL, Obj.GRAVITY_UP,
@@ -72,7 +72,7 @@ class Obj(object):
 
 class Picture(object):
     """
-    Represents an Elastomania level picture.
+    Represents an Elasto Mania level picture.
 
     Attributes:
         point (Point): The 2D Point that represents the position of the object.
@@ -119,7 +119,7 @@ class Picture(object):
 
 class Polygon(object):
     """
-    Represents an Elastomania level polygon.
+    Represents an Elasto Mania level polygon.
 
     Attributes:
         points (list): A list of Points defining the polygon contour.
@@ -283,7 +283,7 @@ class Top10(object):
 
 class Level(object):
     """
-    Represent an Elastomania level.
+    Represents an Elasto Mania level.
 
     Attributes:
         version (string): VERSION_ELMA ('POT14') or VERSION_ACROSS ('POT06').
@@ -335,7 +335,7 @@ class Level(object):
 
 class Frame(object):
     """
-    Represent a single replay frame.
+    Represents a single replay frame.
 
     Attributes:
         position (Point): The position of the kuski in this frame in level
@@ -408,7 +408,7 @@ class Event(object):
 
 class ObjectTouchEvent(Event):
     """
-    Represent a single replay object touch event.
+    Represents a single replay object touch event.
 
     Attributes:
         object_number (int): Index number of the touched object
@@ -424,25 +424,25 @@ class ObjectTouchEvent(Event):
 
 class TurnEvent(Event):
     """
-    Represent a single replay turn event.
+    Represents a single replay turn event.
     """
 
 
 class LeftVoltEvent(Event):
     """
-    Represent a single replay left volt event.
+    Represents a single replay left volt event.
     """
 
 
 class RightVoltEvent(Event):
     """
-    Represent a single replay right volt event.
+    Represents a single replay right volt event.
     """
 
 
 class GroundTouchEvent(Event):
     """
-    Represent a single replay ground touch event.
+    Represents a single replay ground touch event.
 
     Attributes:
         event_sound_volume (float): The volume of the caused by the impact of
@@ -455,13 +455,15 @@ class GroundTouchEvent(Event):
 
 class AppleTouchEvent(Event):
     """
-    Represent an apple touch event. This is always generated together with the ObjectTouchEvent when touching an apple.
+    Represents an apple touch event.
+
+    This is always generated together with the ObjectTouchEvent when touching an apple.
     """
 
 
 class Replay(object):
     """
-    Represent an Elastomania replay.
+    Represents an Elasto Mania replay.
 
     Attributes:
         is_finished (boolean): Whether or not the replay is (probably) finished.

@@ -118,7 +118,7 @@ class LGR_Image(object):
 
     def is_qup_qdown(self):
         """
-        Checks if the current object name qualifies as a qup_ or qdown_ object.
+        Checks if the current object name qualifies as a qup_* or qdown_* object.
         """
         name_lower = self.name.lower()
         return name_lower[:4] == "qup_" or name_lower[:6] == "qdown_"

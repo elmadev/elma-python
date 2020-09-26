@@ -62,7 +62,7 @@ packers = {
 def pack_level(item, is_elma=True):
     """
     Pack a level-related item to its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     if not is_elma and type(item).__name__ in ['Polygon', 'Obj']:
@@ -149,7 +149,7 @@ def pack_level(item, is_elma=True):
 def unpack_level(data):
     """
     Unpack a level-related item from its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     data = iter(data)
@@ -263,7 +263,7 @@ def unpack_level(data):
 def unpack_replay(data):
     """
     Unpack a replay-related item from its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     data = iter(data)
@@ -417,7 +417,7 @@ def unpack_replay(data):
 def pack_replay(item):
     """
     Pack a replay-related item to its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     if isinstance(item, ObjectTouchEvent):
