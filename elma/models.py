@@ -368,6 +368,8 @@ class Frame(object):
         self.is_gasing = 0
         self.is_turned_right = 0
         self.spring_sound_effect_volume = 0
+        # Needed to preserve unknown bits from rec files
+        self._gas_and_turn_state = 0
 
     def __repr__(self):
         return ('Frame(position: %s, left_wheel_position: %s, ' +
@@ -407,6 +409,9 @@ class Event(object):
 class ObjectTouchEvent(Event):
     """
     Represent a single replay object touch event.
+
+    Attributes:
+        object_number (int): Index number of the touched object
     """
     def __init__(self):
         super().__init__()
@@ -444,10 +449,14 @@ class RightVoltEvent(Event):
 class GroundTouchEvent(Event):
     """
     Represent a single replay ground touch event.
+
+    Attributes:
+        event_sound_volume (float): The volume of the caused by the impact of
+            touching the ground within range [0, 0.99].
     """
     def __init__(self):
         super().__init__()
-        self.value = 0
+        self.event_sound_volume = 0
 
     def __repr__(self):
         return 'GroundTouchEvent(time: %s)' % self.time
@@ -484,8 +493,6 @@ class Replay(object):
         self.frames = []
         self.events = []
         self.time = 0.0
-        # Needed to preserve unknown bits from rec files
-        self._gas_and_turn_state = 0
 
     def __repr__(self):
         return (

@@ -373,7 +373,7 @@ def unpack_replay(data):
             event = RightVoltEvent()
         elif event_type == 1:
             event = GroundTouchEvent()
-            event.value = event_sound_volume
+            event.event_sound_volume = event_sound_volume
         elif event_type == 4:
             event = AppleTouchEvent()
 
@@ -447,7 +447,7 @@ def pack_replay(item):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 1) +
-                struct.pack('f', item.value))
+                struct.pack('f', item.event_sound_volume))
 
     if isinstance(item, AppleTouchEvent):
         return (struct.pack('d', item.time) +
