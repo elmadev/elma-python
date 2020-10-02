@@ -7,9 +7,11 @@
 Elma Python Library is a python library for manipulating Elastomania files.
 Currently, it supports simple level and replay manipulation.
 
+
 ## Documentation
 
 [Documentation is available at elma-python-library.readthedocs.org](https://elma-python-library.readthedocs.org).
+
 
 ## Installation
 
@@ -17,7 +19,9 @@ Currently, it supports simple level and replay manipulation.
 pip install elma
 ```
 
+
 ## Usage
+
 
 ### Creating a simple level
 ```python
@@ -59,6 +63,7 @@ with open('mylevel.lev', 'rb') as f:
     level = unpack_level(f.read())
 ```
 
+
 ### Saving a level to a file
 ```python
 from elma.packing import pack_level
@@ -69,6 +74,7 @@ with open('mylevel.lev', 'wb') as f:
     f.write(pack_level(level))
 ```
 
+
 ### Loading a replay from a file
 ```python
 from elma.packing import unpack_replay
@@ -76,6 +82,7 @@ from elma.packing import unpack_replay
 with open('myreplay.rec', 'rb') as f:
     replay = unpack_replay(f.read())
 ```
+
 
 ### Saving a replay to a file
 ```python
@@ -87,6 +94,7 @@ with open('myreplay.rec', 'wb') as f:
     f.write(pack_replay(replay))
 ```
 
+
 ## Development setup
 
 ```
@@ -95,11 +103,13 @@ virtualenv venv
 make setup
 ```
 
+
 ## Running tests
 
 ```
 make test
 ```
+
 
 ## Linting
 
@@ -108,6 +118,7 @@ To lint the project, do:
 ```
 make lint
 ```
+
 
 ## Contributing
 
