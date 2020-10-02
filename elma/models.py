@@ -75,7 +75,7 @@ class Picture(object):
         point (Point): The 2D Point that represents the position of the object.
         picture_name (string): The name of the picture resource to use, without
             .PCX, e.g. 'BARREL'.
-        picture_name (string): The name of the texture resource to use, without
+        texture_name (string): The name of the texture resource to use, without
             .PCX, e.g. 'STONE1'.
         mask_name (string): The name of the texture resource to use, without
             .PCX, e.g. 'MASKHOR'.
