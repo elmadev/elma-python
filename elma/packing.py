@@ -1,3 +1,5 @@
+from elma.constants import VERSION_ELMA
+from elma.constants import VERSION_ACROSS
 from elma.constants import END_OF_DATA_MARKER
 from elma.constants import END_OF_FILE_MARKER
 from elma.constants import END_OF_REPLAY_FILE_MARKER
@@ -36,11 +38,17 @@ packers = {
         struct.pack('I', polygon.grass),
         struct.pack('I', len(polygon.points)),
     ] + [pack_level(point) for point in polygon.points]),
+    'AcrossPolygon': lambda polygon: b''.join([
+        struct.pack('I', len(polygon.points)),
+    ] + [pack_level(point) for point in polygon.points]),
     'Obj': lambda obj: b''.join([
         pack_level(obj.point),
         struct.pack('I', obj.type),
         struct.pack('I', obj.gravity),
-        struct.pack('I', obj.animation_number)]),
+        struct.pack('I', obj.animation_number - 1)]),
+    'AcrossObj': lambda obj: b''.join([
+        pack_level(obj.point),
+        struct.pack('I', obj.type)]),
     'Picture': lambda picture: b''.join([
         null_padded(picture.picture_name, 10),
         null_padded(picture.texture_name, 10),
@@ -51,55 +59,83 @@ packers = {
 }
 
 
-def pack_level(item):
+def pack_level(item, is_elma=True):
     """
     Pack a level-related item to its binary representation readable by
     Elastomania.
     """
 
-    if type(item).__name__ in packers:
-        return packers[type(item).__name__](item)
+    if not is_elma and type(item).__name__ in ['Polygon', 'Obj']:
+        packer_name = 'Across' + type(item).__name__
+    else:
+        packer_name = type(item).__name__
+    if packer_name in packers:
+        return packers[packer_name](item)
 
     level = item
+    if is_elma:
+        assert (level.version == VERSION_ELMA)
+    else:
+        assert (level.version == VERSION_ACROSS)
+
     polygon_checksum = sum([sum([point.x + point.y
                                  for point in polygon.points])
                             for polygon in level.polygons])
     object_checksum = sum([obj.point.x + obj.point.y + obj.type
                            for obj in level.objects])
     picture_checksum = sum([picture.point.x + picture.point.y
-                            for picture in level.pictures])
+                            for picture in level.pictures]) if is_elma else 0
     collected_checksum = 3247.764325643 * (polygon_checksum +
                                            object_checksum +
                                            picture_checksum)
-    integrity_1 = collected_checksum
-    integrity_2 = random.randint(0, 5871) + 11877 - collected_checksum
-    integrity_3 = random.randint(0, 5871) + 11877 - collected_checksum
-    integrity_4 = random.randint(0, 6102) + 12112 - collected_checksum
+    if level.preserve_integrity_values:
+        integrity_1, integrity_2, integrity_3, integrity_4 = level.integrity
+    else:
+        integrity_1 = collected_checksum
+        integrity_2 = random.randint(0, 5871) + 11877 - collected_checksum
+        integrity_3 = random.randint(0, 5871) + 11877 - collected_checksum
+        integrity_4 = random.randint(0, 6102) + 12112 - collected_checksum
     assert ((integrity_3 - integrity_2) <= 5871)
 
-    return b''.join([
-        bytes('POT14', 'latin1'),
-        struct.pack('H', level.level_id & 0xFFFF),
-        struct.pack('I', level.level_id),
-        struct.pack('d', integrity_1),
-        struct.pack('d', integrity_2),
-        struct.pack('d', integrity_3),
-        struct.pack('d', integrity_4),
-        null_padded(level.name, 51),
-        null_padded(level.lgr, 16),
-        null_padded(level.ground_texture, 10),
-        null_padded(level.sky_texture, 10),
-        struct.pack('d', len(level.polygons) + 0.4643643),
-    ] + [pack_level(polygon) for polygon in level.polygons] + [
-        struct.pack('d', len(level.objects) + 0.4643643),
-    ] + [pack_level(obj) for obj in level.objects] + [
-        struct.pack('d', len(level.pictures) + 0.2345672),
-    ] + [pack_level(picture) for picture in level.pictures] + [
-        struct.pack('I', END_OF_DATA_MARKER),
-    ] + [bytes(chr(c), 'latin1') for c in TOP10_SINGLEPLAYER] + [
-    ] + [bytes(chr(c), 'latin1') for c in TOP10_MULTIPLAYER] + [
-        struct.pack('I', END_OF_FILE_MARKER),
-    ])
+    if is_elma:
+        return b''.join([
+            bytes(level.version, 'latin1'),
+            struct.pack('H', level.level_id & 0xFFFF),
+            struct.pack('I', level.level_id),
+            struct.pack('d', integrity_1),
+            struct.pack('d', integrity_2),
+            struct.pack('d', integrity_3),
+            struct.pack('d', integrity_4),
+            null_padded(level.name, 51),
+            null_padded(level.lgr, 16),
+            null_padded(level.ground_texture, 10),
+            null_padded(level.sky_texture, 10),
+            struct.pack('d', len(level.polygons) + 0.4643643),
+        ] + [pack_level(polygon) for polygon in level.polygons] + [
+            struct.pack('d', len(level.objects) + 0.4643643),
+        ] + [pack_level(obj) for obj in level.objects] + [
+            struct.pack('d', len(level.pictures) + 0.2345672),
+        ] + [pack_level(picture) for picture in level.pictures] + [
+            struct.pack('I', END_OF_DATA_MARKER),
+        ] + [bytes(chr(c), 'latin1') for c in TOP10_SINGLEPLAYER] + [
+        ] + [bytes(chr(c), 'latin1') for c in TOP10_MULTIPLAYER] + [
+            struct.pack('I', END_OF_FILE_MARKER),
+        ])
+    else:
+        level_data = [
+            bytes(level.version, 'latin1'),
+            struct.pack('I', level.level_id),
+            struct.pack('d', integrity_1),
+            struct.pack('d', integrity_2),
+            struct.pack('d', integrity_3),
+            struct.pack('d', integrity_4),
+            null_padded(level.name, 15),
+            null_padded('', 44),
+            struct.pack('d', len(level.polygons) + 0.4643643),
+        ] + [pack_level(polygon, False) for polygon in level.polygons] + [
+            struct.pack('d', len(level.objects) + 0.4643643),
+        ] + [pack_level(obj, False) for obj in level.objects]
+        return b''.join(level_data)
 
 
 def unpack_level(data):
@@ -114,18 +150,31 @@ def unpack_level(data):
         return b''.join([bytes(chr(next(data)), 'latin1') for _ in range(n)])
 
     level = Level()
-    assert munch(5) == b'POT14'
-    munch(2)
+    level.version = munch(5).decode('latin1')
+    assert (level.version in [VERSION_ELMA, VERSION_ACROSS])
+    is_elma = (level.version == VERSION_ELMA)
+
+    if is_elma:
+        munch(2)
     level.level_id = struct.unpack('I', munch(4))[0]
-    munch(8 * 4)
-    level.name = munch(51).rstrip(b'\0').decode('latin1')
-    level.lgr = munch(16).rstrip(b'\0').decode('latin1')
-    level.ground_texture = munch(10).rstrip(b'\0').decode('latin1')
-    level.sky_texture = munch(10).rstrip(b'\0').decode('latin1')
+    if level.preserve_integrity_values:
+        for _ in range(4):
+            level.integrity.append(struct.unpack('d', munch(8))[0])
+    else:
+        munch(8 * 4)
+    if is_elma:
+        level.name = munch(51).split(b'\0')[0].decode('latin1')
+        level.lgr = munch(16).split(b'\0')[0].decode('latin1')
+        level.ground_texture = munch(10).split(b'\0')[0].decode('latin1')
+        level.sky_texture = munch(10).split(b'\0')[0].decode('latin1')
+    else:
+        level.name = munch(15).split(b'\0')[0].decode('latin1')
+        # Across header is zero padded to 100 chars
+        munch(44)
 
     number_of_polygons = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_polygons):
-        grass = struct.unpack('I', munch(4))[0]
+        grass = struct.unpack('I', munch(4))[0] if is_elma else False
         number_of_vertices = struct.unpack('I', munch(4))[0]
         points = []
         for __ in range(number_of_vertices):
@@ -139,28 +188,29 @@ def unpack_level(data):
         x = struct.unpack('d', munch(8))[0]
         y = struct.unpack('d', munch(8))[0]
         object_type = struct.unpack('I', munch(4))[0]
-        gravity = struct.unpack('I', munch(4))[0]
-        animation_number = struct.unpack('I', munch(4))[0]
+        gravity = struct.unpack('I', munch(4))[0] if is_elma else 0
+        animation_number = struct.unpack('I', munch(4))[0] + 1 if is_elma else 1
         level.objects.append(Obj(Point(x, y),
                                  object_type,
                                  gravity=gravity,
                                  animation_number=animation_number))
 
-    number_of_pictures = int(struct.unpack('d', munch(8))[0])
-    for _ in range(number_of_pictures):
-        picture_name = munch(10).rstrip(b'\0').decode('latin1')
-        texture_name = munch(10).rstrip(b'\0').decode('latin1')
-        mask_name = munch(10).rstrip(b'\0').decode('latin1')
-        x = struct.unpack('d', munch(8))[0]
-        y = struct.unpack('d', munch(8))[0]
-        distance = struct.unpack('I', munch(4))[0]
-        clipping = struct.unpack('I', munch(4))[0]
-        level.pictures.append(Picture(Point(x, y),
-                                      picture_name=picture_name,
-                                      texture_name=texture_name,
-                                      mask_name=mask_name,
-                                      distance=distance,
-                                      clipping=clipping))
+    if is_elma:
+        number_of_pictures = int(struct.unpack('d', munch(8))[0])
+        for _ in range(number_of_pictures):
+            picture_name = munch(10).split(b'\0')[0].decode('latin1')
+            texture_name = munch(10).split(b'\0')[0].decode('latin1')
+            mask_name = munch(10).split(b'\0')[0].decode('latin1')
+            x = struct.unpack('d', munch(8))[0]
+            y = struct.unpack('d', munch(8))[0]
+            distance = struct.unpack('I', munch(4))[0]
+            clipping = struct.unpack('I', munch(4))[0]
+            level.pictures.append(Picture(Point(x, y),
+                                          picture_name=picture_name,
+                                          texture_name=texture_name,
+                                          mask_name=mask_name,
+                                          distance=distance,
+                                          clipping=clipping))
     return level
 
 

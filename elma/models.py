@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from elma.constants import VERSION_ELMA
 import random
 from math import cos, sin
 
@@ -120,8 +121,8 @@ class Polygon(object):
 
     Attributes:
         points (list): A list of Points defining the polygon contour.
-        grass (boolean): A boolean deciding wether or the polygon is a grass
-            polygon.
+        grass (boolean): A boolean deciding whether or not the polygon is a
+            grass polygon.
     """
     def __init__(self, points, grass=False):
         self.points = points
@@ -186,6 +187,7 @@ class Level(object):
     Represent an Elastomania level.
 
     Attributes:
+        version (string): VERSION_ELMA ('POT14') or VERSION_ACROSS ('POT06').
         polygons (list): A list of Polygons in the level.
         objects (list): A list of Objects in the level.
         pictures (list): A list of Pictures in the level.
@@ -198,8 +200,14 @@ class Level(object):
             level, which should be no longer than 10 characters long.
         sky_texture (string): The name of the sky texture used for this level,
             which should be no longer than 10 characters long.
+        preserve_integrity_values (boolean): Whether or not to unpack and
+            preserve the existing integrity values, instead of recomputing
+            them when packing.
+        integrity (list): A list of four integrity values read from an existing
+            level. Empty, if preserve_integrity_values is False.
     """
     def __init__(self):
+        self.version = VERSION_ELMA
         self.polygons = []
         self.objects = []
         self.pictures = []
@@ -208,6 +216,8 @@ class Level(object):
         self.lgr = 'DEFAULT'
         self.ground_texture = 'ground'
         self.sky_texture = 'sky'
+        self.preserve_integrity_values = False
+        self.integrity = []
 
     def __repr__(self):
         return (('Level(level_id: %s, name: %s, lgr: %s, ' +
