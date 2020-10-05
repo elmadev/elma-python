@@ -1,3 +1,4 @@
+from elma.constants import VERSION_ACROSS
 from elma.models import Level
 from elma.models import Obj
 from elma.models import Picture
@@ -64,5 +65,40 @@ class TestLevelPacking(unittest.TestCase):
                 Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_LEFT),
                 Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_RIGHT),
                 Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_NORMAL)
+                ], level.objects):
+            self.assertEqual(expected_obj, obj)
+
+    def test_packing_across(self):
+        level = Level()
+        level.version = VERSION_ACROSS
+        # Specify level id to make testing easier
+        level.level_id = 2535781587
+        level.polygons = [Polygon([Point(0, 0), Point(0, 1), Point(1, 0)])]
+        level.objects = [
+            Obj(Point(0, 0), Obj.FLOWER),
+            Obj(Point(0, 0), Obj.START),
+            Obj(Point(0, 0), Obj.KILLER),
+            Obj(Point(0, 0), Obj.FOOD)
+        ]
+        packed = pack_level(level, False)
+        original_level = level
+        level = unpack_level(packed)
+        self.assertEqual(VERSION_ACROSS, level.version)
+        self.assertEqual(2535781587, level.level_id)
+        self.assertEqual('Unnamed', level.name)
+
+        # polygons
+        self.assertEqual(1, len(level.polygons))
+        self.assertEqual(Point(0, 0), level.polygons[0].points[0])
+        self.assertEqual(Point(0, 1), level.polygons[0].points[1])
+        self.assertEqual(Point(1, 0), level.polygons[0].points[2])
+
+        # objects
+        self.assertEqual(4, len(level.objects))
+        for expected_obj, obj in zip([
+                Obj(Point(0, 0), Obj.FLOWER),
+                Obj(Point(0, 0), Obj.START),
+                Obj(Point(0, 0), Obj.KILLER),
+                Obj(Point(0, 0), Obj.FOOD)
                 ], level.objects):
             self.assertEqual(expected_obj, obj)
