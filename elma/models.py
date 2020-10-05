@@ -133,6 +133,10 @@ class Polygon(object):
     def __repr__(self):
         return 'Polygon(points: %s, grass: %s)' % (self.points, self.grass)
 
+    def __eq__(self, other_polygon):
+        return (self.points == other_polygon.points and
+                self.grass == other_polygon.grass)
+
     def move_by(self, x=0, y=0):
         self.points = [Point(p.x + x, p.y + y) for p in self.points]
 
@@ -234,6 +238,23 @@ class Top10(object):
         self.single = sorted(self.single, key=lambda t: t.time)[:10]
         self.multi = sorted(self.multi, key=lambda t: t.time)[:10]
 
+    def merge(self, other_top10):
+        for s in self.single:
+            for o in other_top10.single:
+                if s.time == o.time and s.kuski == o.kuski:
+                    other_top10.single.remove(o)
+                    break
+        self.single.extend([o for o in other_top10.single])
+
+        for s in self.multi:
+            for o in other_top10.multi:
+                if (s.time == o.time and s.kuski == o.kuski and
+                      s.kuski2 == o.kuski2):
+                    other_top10.multi.remove(o)
+                    break
+        self.multi.extend([o for o in other_top10.multi])
+        self.sort()
+
     def to_buffer(self):
         self.sort()
         return b''.join([
@@ -304,6 +325,12 @@ class Level(object):
                  'ground_texture: %s, sky_texture: %s)') %
                 (self.level_id, self.name, self.lgr,
                  self.ground_texture, self.sky_texture))
+
+    def __eq__(self, other_level):
+        # level_id, integrity and name can differ
+        return (self.polygons == other_level.polygons and
+                self.objects == other_level.objects and
+                self.pictures == other_level.pictures)
 
 
 class Frame(object):
