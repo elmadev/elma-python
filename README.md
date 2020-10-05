@@ -75,6 +75,23 @@ with open('mylevel.lev', 'wb') as f:
 ```
 
 
+### Merging level top10s
+```python
+from elma.packing import unpack_level
+from elma.packing import pack_level
+
+with open('mylevel1.lev', 'rb') as f:
+    level1 = unpack_level(f.read())
+with open('mylevel2.lev', 'rb') as f:
+    level2 = unpack_level(f.read())
+
+if level1 == level2:
+    level1.top10.merge(level2.top10)
+    with open('mylevel.lev', 'wb') as f:
+        f.write(pack_level(level1))
+```
+
+
 ### Loading a replay from a file
 ```python
 from elma.packing import unpack_replay

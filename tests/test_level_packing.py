@@ -1,3 +1,4 @@
+from copy import deepcopy
 from elma.constants import VERSION_ACROSS
 from elma.models import Level
 from elma.models import Obj
@@ -32,8 +33,8 @@ class TestLevelPacking(unittest.TestCase):
         ]
         level.top10.single.append(Top10Time(1386, 'player1'))
         level.top10.single.append(Top10Time(1379, 'player2'))
-        level.top10.multi.append(Top10Time(709, 'player3', 'player2'))
-        level.top10.multi.append(Top10Time(714, 'player4', 'player1'))
+        level.top10.multi.append(Top10Time(709, 'player3', 'player2', True))
+        level.top10.multi.append(Top10Time(714, 'player4', 'player1', True))
         original_level = level
         packed = pack_level(level)
         level = unpack_level(packed)
@@ -79,10 +80,27 @@ class TestLevelPacking(unittest.TestCase):
         self.assertEqual(2, len(level.top10.multi))
         self.assertEqual(Top10Time(1379, 'player2'), level.top10.single[0])
         self.assertEqual(Top10Time(1386, 'player1'), level.top10.single[1])
-        self.assertEqual(Top10Time(709, 'player3', 'player2'),
+        self.assertEqual(Top10Time(709, 'player3', 'player2', True),
                          level.top10.multi[0])
-        self.assertEqual(Top10Time(714, 'player4', 'player1'),
+        self.assertEqual(Top10Time(714, 'player4', 'player1', True),
                          level.top10.multi[1])
+
+        # merge top10s
+        level2 = deepcopy(level)
+        level2.top10.single.append(Top10Time(1383, 'player2'))
+        level2.top10.multi.append(Top10Time(714, 'player1', 'player5'))
+        level.top10.merge(level2.top10)
+        self.assertEqual(3, len(level.top10.single))
+        self.assertEqual(3, len(level.top10.multi))
+        self.assertEqual(Top10Time(1379, 'player2'), level.top10.single[0])
+        self.assertEqual(Top10Time(1383, 'player2'), level.top10.single[1])
+        self.assertEqual(Top10Time(1386, 'player1'), level.top10.single[2])
+        self.assertEqual(Top10Time(709, 'player3', 'player2', True),
+                         level.top10.multi[0])
+        self.assertEqual(Top10Time(714, 'player4', 'player1', True),
+                         level.top10.multi[1])
+        self.assertEqual(Top10Time(714, 'player1', 'player5', True),
+                         level.top10.multi[2])
 
     def test_packing_across(self):
         level = Level()
