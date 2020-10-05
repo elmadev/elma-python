@@ -403,7 +403,7 @@ class Event(object):
         self.time = 0
 
     def __repr__(self):
-        return 'Event(time: %s)' % self.time
+        return '%s(time: %s)' % (self.__class__.__name__, self.time)
 
 
 class ObjectTouchEvent(Event):
@@ -418,32 +418,26 @@ class ObjectTouchEvent(Event):
         self.object_number = 0
 
     def __repr__(self):
-        return 'ObjectTouchEvent(time: %s, object_number: %s)' % (
-               self.time, self.object_number)
+        return '%s(time: %s, object_number: %s)' % (
+            self.__class__.__name__, self.time, self.object_number)
 
 
 class TurnEvent(Event):
     """
     Represent a single replay turn event.
     """
-    def __repr__(self):
-        return 'TurnEvent(time: %s)' % self.time
 
 
 class LeftVoltEvent(Event):
     """
     Represent a single replay left volt event.
     """
-    def __repr__(self):
-        return 'LeftVoltEvent(time: %s)' % self.time
 
 
 class RightVoltEvent(Event):
     """
     Represent a single replay right volt event.
     """
-    def __repr__(self):
-        return 'RightVoltEvent(time: %s)' % self.time
 
 
 class GroundTouchEvent(Event):
@@ -458,16 +452,11 @@ class GroundTouchEvent(Event):
         super().__init__()
         self.event_sound_volume = 0
 
-    def __repr__(self):
-        return 'GroundTouchEvent(time: %s)' % self.time
-
 
 class AppleTouchEvent(Event):
     """
     Represent an apple touch event. This is always generated together with the ObjectTouchEvent when touching an apple.
     """
-    def __repr__(self):
-        return 'AppleTouchEvent(time: %s)' % self.time
 
 
 class Replay(object):
