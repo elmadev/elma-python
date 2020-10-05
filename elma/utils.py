@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Union
+
 try:
     bytes('A', 'latin1')
 except TypeError:
@@ -38,3 +41,28 @@ def crypt_top10(buffer):
         top10[i] ^= (x & 0xFF)
         x += signed_mod(x, c) * c * d
     return b''.join([bytes(chr(c), 'latin1') for c in top10])
+
+
+def check_writable_file(file: Union[str, Path], exist_ok: bool = False, create_dirs: bool = False) -> None:
+    """
+    Check if file can be written to and optionally create non-existing parent
+    directories.
+
+    Args:
+        file: path to the file
+        exist_ok: if False, FileExistsError is raised if the file already exists
+        create_dirs: create non-existing parent directories of the file
+
+    Raises:
+        FileExistsError: if file exists and exist_ok = False
+        FileNotFoundError: if parent directory of the file does not exists
+            and create_dirs = False
+    """
+    file = Path(file)
+    if file.exists() and not exist_ok:
+        raise FileExistsError(f"File {file} already exists.")
+    parent = file.resolve().parent
+    if create_dirs:
+        parent.mkdir(parents=True, exist_ok=True)
+    elif not parent.exists():
+        raise FileNotFoundError(f"Directory {parent} not found")

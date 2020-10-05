@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from elma.constants import VERSION_ELMA
 from elma.utils import null_padded
 import random
 import struct
 from math import cos, sin
+from pathlib import Path
+from typing import Union
+
+import elma.packing
+from elma.utils import check_writable_file
 
 
 class Point(object):
@@ -249,7 +256,7 @@ class Top10(object):
         for s in self.multi:
             for o in other_top10.multi:
                 if (s.time == o.time and s.kuski == o.kuski and
-                      s.kuski2 == o.kuski2):
+                        s.kuski2 == o.kuski2):
                     other_top10.multi.remove(o)
                     break
         self.multi.extend([o for o in other_top10.multi])
@@ -319,6 +326,69 @@ class Level(object):
         self.top10 = Top10()
         self.preserve_integrity_values = False
         self.integrity = []
+
+    def save(self, file: Union[str, Path], allow_overwrite: bool = False, create_dirs: bool = False) -> None:
+        """
+        Save level to a file
+
+        Args:
+            file: path to the file
+            allow_overwrite: allow overwriting an existing file
+            create_dirs: create non-existing parent directories of the file
+
+        Raises:
+            FileExistsError: if file exists and allow_overwrite = False
+            FileNotFoundError: if parent directory of the file does not exists
+                and create_dirs = False
+        """
+        file = Path(file)
+        check_writable_file(file, exist_ok=allow_overwrite, create_dirs=create_dirs)
+        file.write_bytes(self.pack())
+
+    @classmethod
+    def load(cls, file: Union[str, Path]) -> Level:
+        """
+        Load level from a file
+
+        Args:
+            file: path to a file containing an Elasto Mania level
+
+        Returns:
+            Level object unpacked from the file
+
+        Raises:
+            FileNotFoundError: if the file does not exists
+        """
+        file = Path(file)
+        if not file.exists():
+            raise FileNotFoundError(f"File {file} not found.")
+        level = cls.unpack(file.read_bytes())
+        return level
+
+    def pack(self) -> bytes:
+        """
+        Pack level to its binary representation readable by Elasto Mania
+
+        Returns:
+            Packed level as bytes
+        """
+        is_elma = self.version == VERSION_ELMA
+        packed_level = elma.packing.pack_level(self, is_elma=is_elma)
+        return packed_level
+
+    @classmethod
+    def unpack(cls, packed_level: bytes) -> Level:
+        """
+        Unpack level from its binary representation readable by Elasto Mania
+
+        Args:
+            packed_level: packed level as bytes
+
+        Returns:
+            Unpacked Level object
+        """
+        level = elma.packing.unpack_level(packed_level)
+        return level
 
     def __repr__(self):
         return (('Level(level_id: %s, name: %s, lgr: %s, ' +
@@ -484,6 +554,68 @@ class Replay(object):
         self.time = 0.0
         # Needed to preserve unknown bits from rec files
         self._gas_and_turn_state = 0
+
+    def save(self, file: Union[str, Path], allow_overwrite: bool = False, create_dirs: bool = False) -> None:
+        """
+        Save replay to a file
+
+        Args:
+            file: path to the file
+            allow_overwrite: allow overwriting an existing file
+            create_dirs: create non-existing parent directories of the file
+
+        Raises:
+            FileExistsError: if file exists and allow_overwrite = False
+            FileNotFoundError: if parent directory of the file does not exists
+                and create_dirs = False
+        """
+        file = Path(file)
+        check_writable_file(file, exist_ok=allow_overwrite, create_dirs=create_dirs)
+        file.write_bytes(self.pack())
+
+    @classmethod
+    def load(cls, file: Union[str, Path]) -> Replay:
+        """
+        Load replay from a file
+
+        Args:
+            file: path to a file containing an Elasto Mania replay
+
+        Returns:
+            Replay object unpacked from the file
+
+        Raises:
+            FileNotFoundError: if the file does not exist
+        """
+        file = Path(file)
+        if not file.exists():
+            raise FileNotFoundError(f"File {file} not found.")
+        replay = cls.unpack(file.read_bytes())
+        return replay
+
+    def pack(self) -> bytes:
+        """
+        Pack replay to its binary representation readable by Elasto Mania
+
+        Returns:
+            Packed replay as bytes
+        """
+        packed_replay = elma.packing.pack_replay(self)
+        return packed_replay
+
+    @classmethod
+    def unpack(cls, packed_replay: bytes) -> Replay:
+        """
+        Unpack replay from its binary representation readable by Elasto Mania
+
+        Args:
+            packed_replay: packed replay as bytes
+
+        Returns:
+            Unpacked Replay object
+        """
+        replay = elma.packing.unpack_replay(packed_replay)
+        return replay
 
     def __repr__(self):
         return (

@@ -1,32 +1,37 @@
-from elma.packing import pack_replay
-from elma.packing import unpack_replay
+from pathlib import Path
+import tempfile
+
+from elma.models import Replay
 import unittest
 
 
 class TestReplayPacking(unittest.TestCase):
 
     def test_packing(self):
-        with open('tests/files/test.rec', 'rb') as f:
-            packed_replay = f.read()
-            replay = unpack_replay(packed_replay)
-            self.assertEqual(False, replay.is_multi)
-            self.assertEqual(False, replay.is_flagtag)
-            self.assertEqual(2958928182, replay.level_id)
-            self.assertEqual(b'sig0957.lev', replay.level_name)
-            self.assertEqual(857, len(replay.frames))
-            self.assertEqual(83, len(replay.events))
-            repacked_replay = pack_replay(replay)
-            self.assertEqual(packed_replay, repacked_replay)
+        file = Path('tests/files/test.rec')
+        packed_replay = file.read_bytes()
+        replay = Replay.load(file)
+        self.assertEqual(False, replay.is_multi)
+        self.assertEqual(False, replay.is_flagtag)
+        self.assertEqual(2958928182, replay.level_id)
+        self.assertEqual(b'sig0957.lev', replay.level_name)
+        self.assertEqual(857, len(replay.frames))
+        self.assertEqual(83, len(replay.events))
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            saved_file = Path(tmp_dir) / "test.rec"
+            replay.save(saved_file)
+            self.assertEqual(packed_replay, saved_file.read_bytes())
 
     def test_packing_nonstandard_format(self):
         # this replay uses the event info field in a non-standard way
         # in the original elma it is always -1, except for the object touch events
-        with open('tests/files/test_nonstandard_rec_format.rec', 'rb') as f:
-            packed_replay = f.read()
+        file = Path('tests/files/test_nonstandard_rec_format.rec')
 
-        replay = unpack_replay(packed_replay)
-        repacked_replay = pack_replay(replay)
-        re_unpacked_replay = unpack_replay(repacked_replay)
+        replay = Replay.load(file)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            saved_file = Path(tmp_dir) / "test.rec"
+            replay.save(saved_file)
+            re_unpacked_replay = Replay.load(saved_file)
 
         def check_replay_values(rec):
             self.assertEqual(False, rec.is_multi)
