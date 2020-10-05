@@ -296,7 +296,7 @@ def unpack_replay(data):
     replay.is_multi = bool(read_int32())
     replay.is_flagtag = bool(read_int32())
     replay.level_id = read_uint32()
-    replay.level_name = munch(12).rstrip(b'\0')
+    replay.level_name = munch(12).split(b'\0')[0]
     munch(4)
 
     frame_numbers = range(number_of_replay_frames)
@@ -380,6 +380,37 @@ def unpack_replay(data):
         event.time = event_time
         replay.events.append(event)
 
+    last_frame_time = len(replay.frames)/30.0
+    last_event_time = (0.0 if len(replay.events) == 0 else
+                       replay.events[-1].time * (0.001/(0.182*0.0024)))
+
+    replay.is_finished = False
+    # Potentially finished, if replay ends in a touch event
+    if (len(replay.events) > 0 and
+        (last_frame_time <= last_event_time + 1/30.0) and
+        isinstance(replay.events[-1], (ObjectTouchEvent, AppleTouchEvent))):
+
+        if isinstance(replay.events[-1], ObjectTouchEvent):
+            if (len(replay.events) >= 2 and
+                isinstance(replay.events[-2], ObjectTouchEvent) and
+                replay.events[-2].time != replay.events[-1].time):
+                # Probably ended at flower, but not all apples were taken
+                replay.is_finished = False
+            else:
+                # False positives are possible (e.g., dying to killer)
+                replay.is_finished = True
+        elif (len(replay.events) >= 3 and
+              isinstance(replay.events[-1], AppleTouchEvent)):
+            end_apple_count = sum(1 for e in replay.events
+                                  if isinstance(e, AppleTouchEvent) and
+                                  e.time == replay.events[-1].time)
+            possible_flower_event = replay.events[-1 - 2*end_apple_count]
+            if (isinstance(possible_flower_event, ObjectTouchEvent) and
+                possible_flower_event.time == replay.events[-1].time):
+                # Apple(s) and flower taken at the same time
+                replay.is_finished = True
+
+    replay.time = last_event_time if replay.is_finished else last_frame_time
     return replay
 
 

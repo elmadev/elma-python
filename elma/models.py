@@ -392,8 +392,8 @@ class Event(object):
     Abstract base representation of a single replay event.
 
     Attributes:
-        time (float): The time at which the event occurs, given in 625/273ths
-            of a second.
+        time (float): The time at which the event occurs, given in
+            0.001/(0.182*0.0024)ths of a second.
     """
     __metaclass__ = ABCMeta
 
@@ -464,28 +464,26 @@ class Replay(object):
     Represent an Elastomania replay.
 
     Attributes:
+        is_finished (boolean): Whether or not the replay is (probably) finished.
         is_multi (boolean): Whether or not the replay is a multiplayer replay.
         is_flagtag (boolean): Whether or not the replay is a flagtag replay.
         level_id (int): The unique identifier of the level this replay is from.
         level_name (string): The name of the level this replay is from.
         frames (list): The frames of this replay.
         events (list): The events of this replay.
+        time (float): The time of this replay in seconds.
     """
     def __init__(self):
+        self.is_finished = False
         self.is_multi = False
         self.is_flagtag = False
         self.level_id = 0
         self.level_name = ''
         self.frames = []
         self.events = []
+        self.time = 0.0
         # Needed to preserve unknown bits from rec files
         self._gas_and_turn_state = 0
-
-    def get_exact_duration_in_seconds(self):
-        """
-        Calculates the exact replay duration in seconds.
-        """
-        return self.events[-1].time * 625/273
 
     def __repr__(self):
         return (
