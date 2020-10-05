@@ -4,6 +4,8 @@ from elma.models import Obj
 from elma.models import Picture
 from elma.models import Point
 from elma.models import Polygon
+from elma.models import Top10
+from elma.models import Top10Time
 from elma.packing import pack_level
 from elma.packing import unpack_level
 import unittest
@@ -28,8 +30,12 @@ class TestLevelPacking(unittest.TestCase):
             Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_RIGHT),
             Obj(Point(0, 0), Obj.FOOD, gravity=Obj.GRAVITY_NORMAL)
         ]
-        packed = pack_level(level)
+        level.top10.single.append(Top10Time(1386, 'player1'))
+        level.top10.single.append(Top10Time(1379, 'player2'))
+        level.top10.multi.append(Top10Time(709, 'player3', 'player2'))
+        level.top10.multi.append(Top10Time(714, 'player4', 'player1'))
         original_level = level
+        packed = pack_level(level)
         level = unpack_level(packed)
         self.assertEqual(2535781587, level.level_id)
         self.assertEqual('Unnamed', level.name)
@@ -68,6 +74,16 @@ class TestLevelPacking(unittest.TestCase):
                 ], level.objects):
             self.assertEqual(expected_obj, obj)
 
+        # top10
+        self.assertEqual(2, len(level.top10.single))
+        self.assertEqual(2, len(level.top10.multi))
+        self.assertEqual(Top10Time(1379, 'player2'), level.top10.single[0])
+        self.assertEqual(Top10Time(1386, 'player1'), level.top10.single[1])
+        self.assertEqual(Top10Time(709, 'player3', 'player2'),
+                         level.top10.multi[0])
+        self.assertEqual(Top10Time(714, 'player4', 'player1'),
+                         level.top10.multi[1])
+
     def test_packing_across(self):
         level = Level()
         level.version = VERSION_ACROSS
@@ -81,7 +97,6 @@ class TestLevelPacking(unittest.TestCase):
             Obj(Point(0, 0), Obj.FOOD)
         ]
         packed = pack_level(level, False)
-        original_level = level
         level = unpack_level(packed)
         self.assertEqual(VERSION_ACROSS, level.version)
         self.assertEqual(2535781587, level.level_id)

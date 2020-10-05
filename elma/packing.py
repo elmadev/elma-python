@@ -3,8 +3,6 @@ from elma.constants import VERSION_ACROSS
 from elma.constants import END_OF_DATA_MARKER
 from elma.constants import END_OF_FILE_MARKER
 from elma.constants import END_OF_REPLAY_FILE_MARKER
-from elma.constants import TOP10_MULTIPLAYER
-from elma.constants import TOP10_SINGLEPLAYER
 from elma.models import Frame
 from elma.models import GroundTouchEvent
 from elma.models import AppleTouchEvent
@@ -15,10 +13,12 @@ from elma.models import ObjectTouchEvent
 from elma.models import Picture
 from elma.models import Point
 from elma.models import Polygon
+from elma.models import Top10Time
 from elma.models import Replay
 from elma.models import RightVoltEvent
 from elma.models import TurnEvent
 from elma.utils import null_padded
+from elma.utils import crypt_top10
 import random
 import struct
 
@@ -117,8 +117,8 @@ def pack_level(item, is_elma=True):
             struct.pack('d', len(level.pictures) + 0.2345672),
         ] + [pack_level(picture) for picture in level.pictures] + [
             struct.pack('I', END_OF_DATA_MARKER),
-        ] + [bytes(chr(c), 'latin1') for c in TOP10_SINGLEPLAYER] + [
-        ] + [bytes(chr(c), 'latin1') for c in TOP10_MULTIPLAYER] + [
+        ] + [bytes(chr(c), 'latin1')
+             for c in crypt_top10(level.top10.to_buffer())] + [
             struct.pack('I', END_OF_FILE_MARKER),
         ])
     else:
@@ -135,6 +135,14 @@ def pack_level(item, is_elma=True):
         ] + [pack_level(polygon, False) for polygon in level.polygons] + [
             struct.pack('d', len(level.objects) + 0.4643643),
         ] + [pack_level(obj, False) for obj in level.objects]
+
+        if len(level.top10.single) > 0 or len(level.top10.multi) > 0:
+            level_data += [
+                struct.pack('I', END_OF_DATA_MARKER),
+            ] + [bytes(chr(c), 'latin1')
+                 for c in crypt_top10(level.top10.to_buffer())] + [
+                struct.pack('I', END_OF_FILE_MARKER),
+            ]
         return b''.join(level_data)
 
 
@@ -146,8 +154,9 @@ def unpack_level(data):
 
     data = iter(data)
 
-    def munch(n):
-        return b''.join([bytes(chr(next(data)), 'latin1') for _ in range(n)])
+    def munch(n, dataiter=data):
+        return b''.join([bytes(chr(next(dataiter)), 'latin1')
+                         for _ in range(n)])
 
     level = Level()
     level.version = munch(5).decode('latin1')
@@ -211,6 +220,43 @@ def unpack_level(data):
                                           mask_name=mask_name,
                                           distance=distance,
                                           clipping=clipping))
+        eod_marker = munch(4)
+    else:
+        # Across level has a top10 if it has been finished in Elma
+        nextbyte = next(data, None)
+        if nextbyte is None:
+            return level
+        else:
+            eod_marker = munch(4, iter([nextbyte] + [b for b in munch(3)]))
+
+    assert (struct.unpack('I', eod_marker)[0] == END_OF_DATA_MARKER)
+
+    top10 = iter(crypt_top10(munch(688)))
+    for top10_block in ['single', 'multi']:
+        times = []
+        kuskis1 = []
+        kuskis2 = []
+        time_count = struct.unpack('I', munch(4, top10))[0]
+        for _ in range(10):
+            times.append(struct.unpack('I', munch(4, top10))[0])
+        for _ in range(10):
+            kuskis1.append(munch(15, top10).split(b'\0')[0].decode('latin1'))
+        for _ in range(10):
+            kuskis2.append(munch(15, top10).split(b'\0')[0].decode('latin1'))
+        times = times[:time_count]
+        kuskis1 = kuskis1[:time_count]
+        kuskis2 = kuskis2[:time_count]
+        if top10_block == 'single':
+            level.top10.single = [Top10Time(t, kuskis1[i], kuskis2[i])
+                                  for i, t in enumerate(times)
+                                  if (t > 0 and len(kuskis1[i]) > 0)]
+        else:
+            level.top10.multi = [Top10Time(t, kuskis1[i], kuskis2[i], True)
+                                 for i, t in enumerate(times)
+                                 if (t > 0 and len(kuskis1[i]) > 0 and
+                                     len(kuskis2[i]) > 0)]
+
+    assert (struct.unpack('I', munch(4))[0] == END_OF_FILE_MARKER)
     return level
 
 
