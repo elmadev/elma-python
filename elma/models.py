@@ -249,7 +249,7 @@ class Top10(object):
         for s in self.multi:
             for o in other_top10.multi:
                 if (s.time == o.time and s.kuski == o.kuski and
-                      s.kuski2 == o.kuski2):
+                        s.kuski2 == o.kuski2):
                     other_top10.multi.remove(o)
                     break
         self.multi.extend([o for o in other_top10.multi])

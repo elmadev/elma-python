@@ -388,12 +388,12 @@ def unpack_replay(data):
     # Potentially finished, if replay ends in a touch event
     if (len(replay.events) > 0 and
         (last_frame_time <= last_event_time + 1/30.0) and
-        isinstance(replay.events[-1], (ObjectTouchEvent, AppleTouchEvent))):
+            isinstance(replay.events[-1], (ObjectTouchEvent, AppleTouchEvent))):
 
         if isinstance(replay.events[-1], ObjectTouchEvent):
             if (len(replay.events) >= 2 and
                 isinstance(replay.events[-2], ObjectTouchEvent) and
-                replay.events[-2].time != replay.events[-1].time):
+                    replay.events[-2].time != replay.events[-1].time):
                 # Probably ended at flower, but not all apples were taken
                 replay.is_finished = False
             else:
@@ -406,7 +406,7 @@ def unpack_replay(data):
                                   e.time == replay.events[-1].time)
             possible_flower_event = replay.events[-1 - 2*end_apple_count]
             if (isinstance(possible_flower_event, ObjectTouchEvent) and
-                possible_flower_event.time == replay.events[-1].time):
+                    possible_flower_event.time == replay.events[-1].time):
                 # Apple(s) and flower taken at the same time
                 replay.is_finished = True
 

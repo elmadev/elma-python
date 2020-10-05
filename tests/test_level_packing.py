@@ -5,7 +5,6 @@ from elma.models import Obj
 from elma.models import Picture
 from elma.models import Point
 from elma.models import Polygon
-from elma.models import Top10
 from elma.models import Top10Time
 from elma.packing import pack_level
 from elma.packing import unpack_level

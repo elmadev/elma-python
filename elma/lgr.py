@@ -42,7 +42,7 @@ class LGR_Image(object):
             LGR_Image.TRANSPARENCY_PAL_ZERO, LGR_Image.TRANSPARENCY_TOPLEFT,
             LGR_Image.TRANSPARENCY_TOPRIGHT, LGR_Image.TRANSPARENCY_BOTTOMLEFT,
             LGR_Image.TRANSPARENCY_BOTTOMRIGHT. Only used if
-            **is_in_pictures_lst()=True**.  TRANSPARENCY_PAL_ZERO indicates the
+            **self.is_in_pictures_lst()=True**.  TRANSPARENCY_PAL_ZERO indicates the
             the palette index 0 is selected as the transparent color.
         padding (int[7]): Each LGR entry has 7 bytes of padding that are
             unused. This can in theory be used to store extra information.
@@ -134,7 +134,7 @@ class LGR_Image(object):
         Checks if the current name is a recognized object (qfood*, qexit,
         qkiller)
         """
-        return (self.name.lower() in LGR_OBJECT_NAME)
+        return self.name.lower() in LGR_OBJECT_NAME
 
     def is_special(self):
         """
@@ -159,18 +159,18 @@ class LGR_Image(object):
         self.transparency = transparency
 
     def __repr__(self):
-        if(self.is_in_pictures_lst()):
+        if self.is_in_pictures_lst():
             return (('LGR_Image(name: %s, img: %s, image_type: %s, ' +
                      'default_distance: %s, default_clipping: %s, ' +
                      'transparency: %s, padding: %s)') %
                     (self.name, self.img, self.image_type,
                      self.default_distance, self.default_clipping,
                      self.transparency, self.padding))
-        return (('LGR_Image(name: %s, img: %s, padding: %s)') %
+        return ('LGR_Image(name: %s, img: %s, padding: %s)' %
                 (self.name, self.img, self.padding))
 
     def __eq__(self, other_picture):
-        if(self.is_in_pictures_lst()):
+        if self.is_in_pictures_lst():
             return (self.name == other_picture.name and
                     self.img.mode == other_picture.img.mode and
                     self.img.size == other_picture.img.size and
@@ -230,33 +230,33 @@ def unpack_LGR(data):
     def get_int32(loc):
         return struct.unpack('<I', data[loc:loc+4])[0]
 
-    if(type(data).__name__ == "str"):
+    if type(data).__name__ == "str":
         with open(data, 'rb') as f:
             data = f.read()
 
     lgr = LGR()
-    pictures = []  # temp list to retain order of files by x instead of l
+    pictures = []  # temp list to retain order of files by pcx order instead of Pictures.lst
 
     assert(data[0:5] == b'LGR12')
-    x = get_int32(5)
+    n_pcx = get_int32(5)
     assert(get_int32(9) == LGR_PICTURES_LST_ID)
-    l = get_int32(13)
+    n_pics = get_int32(13)
 
-    for i in range(l):
+    for i in range(n_pics):
         pictures.append(LGR_Image(
             name=data[17+10*i:17+10*i+10].rstrip(b'\0').decode('latin1'),
             img=None,
-            image_type=get_int32(17+10*l+4*i),
-            default_distance=get_int32(17+14*l+4*i),
-            default_clipping=get_int32(17+18*l+4*i),
-            transparency=get_int32(17+22*l+4*i),
+            image_type=get_int32(17+10*n_pics+4*i),
+            default_distance=get_int32(17+14*n_pics+4*i),
+            default_clipping=get_int32(17+18*n_pics+4*i),
+            transparency=get_int32(17+22*n_pics+4*i),
             padding=LGR_PCX_PADDING))
 
-    sp = 17+l*26
+    sp = 17+n_pics*26
 
     found_palette = False
     term = re.compile(b'.pcx\0', re.IGNORECASE)
-    for i in range(x):
+    for i in range(n_pcx):
         pcx_name = data[sp:sp+13]
         pcx_name = pcx_name[:term.search(pcx_name).start()].decode('latin1')
         lst_pcx_match = False
@@ -269,7 +269,7 @@ def unpack_LGR(data):
             lgr.palette = pcx_img.getpalette()
             found_palette = True
         for obj in pictures:
-            if(obj.name.lower() == pcx_name.lower()):
+            if obj.name.lower() == pcx_name.lower():
                 obj.img = pcx_img
                 obj.padding = pcx_padding
                 lgr.images.append(obj)
@@ -284,7 +284,7 @@ def unpack_LGR(data):
     if not found_palette and lgr.images:
         lgr.images[0].get_palette()
 
-    assert(get_int32(sp) == LGR_END_OF_FILE)
+    assert get_int32(sp) == LGR_END_OF_FILE
 
     return lgr
 
@@ -298,7 +298,7 @@ def pack_LGR(lgr):
     def to_int32(val):
         return struct.pack('<I', val)
 
-    l = 0
+    n_pics = 0
     l_name = []
     l_image_type = []
     l_default_distance = []
@@ -306,8 +306,8 @@ def pack_LGR(lgr):
     l_transparency = []
     x = []
     for obj in lgr.images:
-        if(obj.is_in_pictures_lst()):
-            l = l+1
+        if obj.is_in_pictures_lst():
+            n_pics = n_pics+1
             l_name.extend([null_padded(obj.name, 8), b'\0\0'])
             l_image_type.append(to_int32(obj.image_type))
             l_default_distance.append(to_int32(obj.default_distance))
@@ -327,7 +327,7 @@ def pack_LGR(lgr):
         b'LGR12',
         to_int32(len(lgr.images)),
         to_int32(LGR_PICTURES_LST_ID),
-        to_int32(l),
+        to_int32(n_pics),
         b''.join(l_name),
         b''.join(l_image_type),
         b''.join(l_default_distance),
