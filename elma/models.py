@@ -1,6 +1,8 @@
 from abc import ABCMeta
 from elma.constants import VERSION_ELMA
+from elma.utils import null_padded
 import random
+import struct
 from math import cos, sin
 
 
@@ -182,6 +184,82 @@ class Polygon(object):
         return min(self.points, key=lambda p: p.y)
 
 
+class Top10Time(object):
+    """
+    Represents a top10 time.
+
+    Attributes:
+        time (int): The finished time in hundredths.
+        kuski (string): The name of the first player.
+        kuski2 (string): The name of the second player. Should equal kuski for
+            singleplayer times.
+        is_multi (boolean): Whether or not the time is a multiplayer time.
+    """
+    def __init__(self, time, kuski, kuski2=None, is_multi=False):
+        self.time = time
+        self.kuski = kuski
+        self.kuski2 = kuski if kuski2 is None else kuski2
+        self.is_multi = is_multi
+
+    def __repr__(self):
+        if self.is_multi:
+            return ('Top10Time(time: %s, kuski: %s, kuski2: %s)' %
+                    (self.time, self.kuski, self.kuski2))
+        else:
+            return 'Top10Time(time: %s, kuski: %s)' % (self.time, self.kuski)
+
+    def __eq__(self, other_time):
+        return (self.time == other_time.time and
+                self.kuski == other_time.kuski and
+                self.kuski2 == other_time.kuski2)
+
+
+class Top10(object):
+    """
+    Represents the complete top10 of a level with both singleplayer
+    and multiplayer times, up to 10 times of each.
+
+    Attributes:
+        single (list): A list of up to 10 singleplayer Top10Times.
+        multi (list): A list of up to 10 multiplayer Top10Times.
+    """
+    def __init__(self):
+        self.single = []
+        self.multi = []
+
+    def __repr__(self):
+        return 'Top10(single: %s, multi: %s)' % (self.single, self.multi)
+
+    def sort(self):
+        self.single = sorted(self.single, key=lambda t: t.time)[:10]
+        self.multi = sorted(self.multi, key=lambda t: t.time)[:10]
+
+    def to_buffer(self):
+        self.sort()
+        return b''.join([
+            struct.pack('I', len(self.single)),
+            b''.join([struct.pack('I', t.time) for t in self.single]),
+            b''.join([struct.pack('I', 0)
+                      for _ in range(10 - len(self.single))]),
+            b''.join([null_padded(t.kuski, 15) for t in self.single]),
+            b''.join([null_padded('', 15)
+                      for _ in range(10 - len(self.single))]),
+            b''.join([null_padded(t.kuski2, 15) for t in self.single]),
+            b''.join([null_padded('', 15)
+                      for _ in range(10 - len(self.single))]),
+            struct.pack('I', len(self.multi)),
+            b''.join([struct.pack('I', t.time) for t in self.multi]),
+            b''.join([struct.pack('I', 0)
+                      for _ in range(10 - len(self.multi))]),
+            b''.join([null_padded(t.kuski, 15) for t in self.multi]),
+            b''.join([null_padded('', 15)
+                      for _ in range(10 - len(self.multi))]),
+            b''.join([null_padded(t.kuski2, 15) for t in self.multi]),
+            b''.join([null_padded('', 15)
+                      for _ in range(10 - len(self.multi))]),
+        ])
+
+
 class Level(object):
     """
     Represent an Elastomania level.
@@ -200,6 +278,7 @@ class Level(object):
             level, which should be no longer than 10 characters long.
         sky_texture (string): The name of the sky texture used for this level,
             which should be no longer than 10 characters long.
+        top10 (Top10): A Top10 for the level.
         preserve_integrity_values (boolean): Whether or not to unpack and
             preserve the existing integrity values, instead of recomputing
             them when packing.
@@ -216,6 +295,7 @@ class Level(object):
         self.lgr = 'DEFAULT'
         self.ground_texture = 'ground'
         self.sky_texture = 'sky'
+        self.top10 = Top10()
         self.preserve_integrity_values = False
         self.integrity = []
 
