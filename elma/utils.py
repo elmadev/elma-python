@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 try:
     bytes('A', 'latin1')
 except TypeError:
@@ -38,3 +40,6 @@ def crypt_top10(buffer):
         top10[i] ^= (x & 0xFF)
         x += signed_mod(x, c) * c * d
     return b''.join([bytes(chr(c), 'latin1') for c in top10])
+
+
+BoundingBox = namedtuple('BoundingBox', ['min_x', 'max_x', 'min_y', 'max_y'])
