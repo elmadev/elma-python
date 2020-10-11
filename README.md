@@ -57,58 +57,42 @@ The above snippet defines a simple level that looks like this:
 
 ### Loading a level from a file
 ```python
-from elma.packing import unpack_level
+from elma.models import Level
 
-with open('mylevel.lev', 'rb') as f:
-    level = unpack_level(f.read())
+level = Level.load('mylevel.lev')
 ```
 
 
 ### Saving a level to a file
 ```python
-from elma.packing import pack_level
-
-level = ...
-
-with open('mylevel.lev', 'wb') as f:
-    f.write(pack_level(level))
+level.save('mylevel.lev')
 ```
 
 
 ### Merging level top10s
 ```python
-from elma.packing import unpack_level
-from elma.packing import pack_level
+from elma.models import Level
 
-with open('mylevel1.lev', 'rb') as f:
-    level1 = unpack_level(f.read())
-with open('mylevel2.lev', 'rb') as f:
-    level2 = unpack_level(f.read())
+level1 = Level.load('mylevel1.lev')
+level2 = Level.load('mylevel2.lev')
 
 if level1 == level2:
     level1.top10.merge(level2.top10)
-    with open('mylevel.lev', 'wb') as f:
-        f.write(pack_level(level1))
+    level1.save('mylevel.lev')
 ```
 
 
 ### Loading a replay from a file
 ```python
-from elma.packing import unpack_replay
+from elma.models import Replay
 
-with open('myreplay.rec', 'rb') as f:
-    replay = unpack_replay(f.read())
+replay = Replay.load('myreplay.rec')
 ```
 
 
 ### Saving a replay to a file
 ```python
-from elma.packing import pack_replay
-
-replay = ...
-
-with open('myreplay.rec', 'wb') as f:
-    f.write(pack_replay(replay))
+replay.save('myreplay.rec')
 ```
 
 

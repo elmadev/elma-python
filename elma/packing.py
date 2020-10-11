@@ -3,20 +3,7 @@ from elma.constants import VERSION_ACROSS
 from elma.constants import END_OF_DATA_MARKER
 from elma.constants import END_OF_FILE_MARKER
 from elma.constants import END_OF_REPLAY_FILE_MARKER
-from elma.models import Frame
-from elma.models import GroundTouchEvent
-from elma.models import AppleTouchEvent
-from elma.models import LeftVoltEvent
-from elma.models import Level
-from elma.models import Obj
-from elma.models import ObjectTouchEvent
-from elma.models import Picture
-from elma.models import Point
-from elma.models import Polygon
-from elma.models import Top10Time
-from elma.models import Replay
-from elma.models import RightVoltEvent
-from elma.models import TurnEvent
+import elma.models
 from elma.utils import null_padded
 from elma.utils import crypt_top10
 import random
@@ -158,7 +145,7 @@ def unpack_level(data):
         return b''.join([bytes(chr(next(dataiter)), 'latin1')
                          for _ in range(n)])
 
-    level = Level()
+    level = elma.models.Level()
     level.version = munch(5).decode('latin1')
     assert (level.version in [VERSION_ELMA, VERSION_ACROSS])
     is_elma = (level.version == VERSION_ELMA)
@@ -189,8 +176,8 @@ def unpack_level(data):
         for __ in range(number_of_vertices):
             x = struct.unpack('d', munch(8))[0]
             y = struct.unpack('d', munch(8))[0]
-            points.append(Point(x, y))
-        level.polygons.append(Polygon(points, grass=grass))
+            points.append(elma.models.Point(x, y))
+        level.polygons.append(elma.models.Polygon(points, grass=grass))
 
     number_of_objects = int(struct.unpack('d', munch(8))[0])
     for _ in range(number_of_objects):
@@ -199,10 +186,10 @@ def unpack_level(data):
         object_type = struct.unpack('I', munch(4))[0]
         gravity = struct.unpack('I', munch(4))[0] if is_elma else 0
         animation_number = struct.unpack('I', munch(4))[0] + 1 if is_elma else 1
-        level.objects.append(Obj(Point(x, y),
-                                 object_type,
-                                 gravity=gravity,
-                                 animation_number=animation_number))
+        level.objects.append(elma.models.Obj(elma.models.Point(x, y),
+                                             object_type,
+                                             gravity=gravity,
+                                             animation_number=animation_number))
 
     if is_elma:
         number_of_pictures = int(struct.unpack('d', munch(8))[0])
@@ -214,12 +201,12 @@ def unpack_level(data):
             y = struct.unpack('d', munch(8))[0]
             distance = struct.unpack('I', munch(4))[0]
             clipping = struct.unpack('I', munch(4))[0]
-            level.pictures.append(Picture(Point(x, y),
-                                          picture_name=picture_name,
-                                          texture_name=texture_name,
-                                          mask_name=mask_name,
-                                          distance=distance,
-                                          clipping=clipping))
+            level.pictures.append(elma.models.Picture(elma.models.Point(x, y),
+                                                      picture_name=picture_name,
+                                                      texture_name=texture_name,
+                                                      mask_name=mask_name,
+                                                      distance=distance,
+                                                      clipping=clipping))
         eod_marker = munch(4)
     else:
         # Across level has a top10 if it has been finished in Elma
@@ -247,11 +234,11 @@ def unpack_level(data):
         kuskis1 = kuskis1[:time_count]
         kuskis2 = kuskis2[:time_count]
         if top10_block == 'single':
-            level.top10.single = [Top10Time(t, kuskis1[i], kuskis2[i])
+            level.top10.single = [elma.models.Top10Time(t, kuskis1[i], kuskis2[i])
                                   for i, t in enumerate(times)
                                   if (t > 0 and len(kuskis1[i]) > 0)]
         else:
-            level.top10.multi = [Top10Time(t, kuskis1[i], kuskis2[i], True)
+            level.top10.multi = [elma.models.Top10Time(t, kuskis1[i], kuskis2[i], True)
                                  for i, t in enumerate(times)
                                  if (t > 0 and len(kuskis1[i]) > 0 and
                                      len(kuskis2[i]) > 0)]
@@ -289,7 +276,7 @@ def unpack_replay(data):
     def read_double():
         return struct.unpack('d', munch(8))[0]
 
-    replay = Replay()
+    replay = elma.models.Replay()
 
     number_of_replay_frames = read_int32()
     munch(4)
@@ -340,11 +327,11 @@ def unpack_replay(data):
                                      gas_and_turn_states,
                                      sound_effect_volumes):
 
-        frame = Frame()
-        frame.position = Point(x, y)
-        frame.left_wheel_position = Point(left_wheel_x, left_wheel_y)
-        frame.right_wheel_position = Point(right_wheel_x, right_wheel_y)
-        frame.head_position = Point(head_x, head_y)
+        frame = elma.models.Frame()
+        frame.position = elma.models.Point(x, y)
+        frame.left_wheel_position = elma.models.Point(left_wheel_x, left_wheel_y)
+        frame.right_wheel_position = elma.models.Point(right_wheel_x, right_wheel_y)
+        frame.head_position = elma.models.Point(head_x, head_y)
         frame.rotation = rotation
         frame.left_wheel_rotation = left_wheel_rotation
         frame.right_wheel_rotation = right_wheel_rotation
@@ -363,19 +350,19 @@ def unpack_replay(data):
         event_sound_volume = read_float()
 
         if event_type == 0:
-            event = ObjectTouchEvent()
+            event = elma.models.ObjectTouchEvent()
             event.object_number = info
         elif event_type == 5:
-            event = TurnEvent()
+            event = elma.models.TurnEvent()
         elif event_type == 7:
-            event = LeftVoltEvent()
+            event = elma.models.LeftVoltEvent()
         elif event_type == 6:
-            event = RightVoltEvent()
+            event = elma.models.RightVoltEvent()
         elif event_type == 1:
-            event = GroundTouchEvent()
+            event = elma.models.GroundTouchEvent()
             event.event_sound_volume = event_sound_volume
         elif event_type == 4:
-            event = AppleTouchEvent()
+            event = elma.models.AppleTouchEvent()
 
         event.time = event_time
         replay.events.append(event)
@@ -388,11 +375,11 @@ def unpack_replay(data):
     # Potentially finished, if replay ends in a touch event
     if (len(replay.events) > 0 and
         (last_frame_time <= last_event_time + 1/30.0) and
-            isinstance(replay.events[-1], (ObjectTouchEvent, AppleTouchEvent))):
+            isinstance(replay.events[-1], (elma.models.ObjectTouchEvent, elma.models.AppleTouchEvent))):
 
-        if isinstance(replay.events[-1], ObjectTouchEvent):
+        if isinstance(replay.events[-1], elma.models.ObjectTouchEvent):
             if (len(replay.events) >= 2 and
-                isinstance(replay.events[-2], ObjectTouchEvent) and
+                isinstance(replay.events[-2], elma.models.ObjectTouchEvent) and
                     replay.events[-2].time != replay.events[-1].time):
                 # Probably ended at flower, but not all apples were taken
                 replay.is_finished = False
@@ -400,12 +387,12 @@ def unpack_replay(data):
                 # False positives are possible (e.g., dying to killer)
                 replay.is_finished = True
         elif (len(replay.events) >= 3 and
-              isinstance(replay.events[-1], AppleTouchEvent)):
+              isinstance(replay.events[-1], elma.models.AppleTouchEvent)):
             end_apple_count = sum(1 for e in replay.events
-                                  if isinstance(e, AppleTouchEvent) and
+                                  if isinstance(e, elma.models.AppleTouchEvent) and
                                   e.time == replay.events[-1].time)
             possible_flower_event = replay.events[-1 - 2*end_apple_count]
-            if (isinstance(possible_flower_event, ObjectTouchEvent) and
+            if (isinstance(possible_flower_event, elma.models.ObjectTouchEvent) and
                     possible_flower_event.time == replay.events[-1].time):
                 # Apple(s) and flower taken at the same time
                 replay.is_finished = True
@@ -420,36 +407,36 @@ def pack_replay(item):
     Elasto Mania.
     """
 
-    if isinstance(item, ObjectTouchEvent):
+    if isinstance(item, elma.models.ObjectTouchEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('I', item.object_number) +
                 struct.pack('f', 0))
 
-    if isinstance(item, TurnEvent):
+    if isinstance(item, elma.models.TurnEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 5) +
                 struct.pack('f', 0.99))
 
-    if isinstance(item, LeftVoltEvent):
+    if isinstance(item, elma.models.LeftVoltEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 7) +
                 struct.pack('f', 0.99))
 
-    if isinstance(item, RightVoltEvent):
+    if isinstance(item, elma.models.RightVoltEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 6) +
                 struct.pack('f', 0.99))
 
-    if isinstance(item, GroundTouchEvent):
+    if isinstance(item, elma.models.GroundTouchEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 1) +
                 struct.pack('f', item.event_sound_volume))
 
-    if isinstance(item, AppleTouchEvent):
+    if isinstance(item, elma.models.AppleTouchEvent):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 4) +
