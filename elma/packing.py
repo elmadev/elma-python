@@ -49,7 +49,7 @@ packers = {
 def pack_level(item, is_elma=True):
     """
     Pack a level-related item to its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     if not is_elma and type(item).__name__ in ['Polygon', 'Obj']:
@@ -136,7 +136,7 @@ def pack_level(item, is_elma=True):
 def unpack_level(data):
     """
     Unpack a level-related item from its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     data = iter(data)
@@ -250,7 +250,7 @@ def unpack_level(data):
 def unpack_replay(data):
     """
     Unpack a replay-related item from its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     data = iter(data)
@@ -360,7 +360,7 @@ def unpack_replay(data):
             event = elma.models.RightVoltEvent()
         elif event_type == 1:
             event = elma.models.GroundTouchEvent()
-            event.value = event_sound_volume
+            event.event_sound_volume = event_sound_volume
         elif event_type == 4:
             event = elma.models.AppleTouchEvent()
 
@@ -404,7 +404,7 @@ def unpack_replay(data):
 def pack_replay(item):
     """
     Pack a replay-related item to its binary representation readable by
-    Elastomania.
+    Elasto Mania.
     """
 
     if isinstance(item, elma.models.ObjectTouchEvent):
@@ -434,7 +434,7 @@ def pack_replay(item):
         return (struct.pack('d', item.time) +
                 struct.pack('h', -1) +
                 struct.pack('h', 1) +
-                struct.pack('f', item.value))
+                struct.pack('f', item.event_sound_volume))
 
     if isinstance(item, elma.models.AppleTouchEvent):
         return (struct.pack('d', item.time) +
