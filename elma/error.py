@@ -63,11 +63,11 @@ def check_LGR_error(lgro, palette=None):
     should have
     """
     message = []
-    if(type(lgro).__name__ == "LGR"):
+    if type(lgro).__name__ == "LGR":
         use_palette = None
         if(len(lgro.palette) == 768 and
-           max(lgro.palette) <= 255 and
-           min(lgro.palette) >= 0):
+                max(lgro.palette) <= 255 and
+                min(lgro.palette) >= 0):
             use_palette = lgro.palette
         else:
             message.append([
@@ -84,10 +84,10 @@ def check_LGR_error(lgro, palette=None):
         for item in LGR_MANDATORY_FILES:
             n_count = 0
             for obj in lgro.images:
-                if(item == obj.name.lower()):
+                if item == obj.name.lower():
                     n_count = 1
                     break
-            if(n_count == 0):
+            if n_count == 0:
                 message.append([
                     ERR_LGR_MISSING_MANDATORY_FILE,
                     item,
@@ -95,56 +95,56 @@ def check_LGR_error(lgro, palette=None):
         len_lgr = len(lgro.images)
         for i in range(len_lgr):
             namelower = lgro.images[i].name.lower()
-            if(lgro.images[i].is_in_pictures_lst()):
-                if(lgro.images[i].is_qup_qdown()):
+            if lgro.images[i].is_in_pictures_lst():
+                if lgro.images[i].is_qup_qdown():
                     n_grass += 1
-                elif(lgro.images[i].is_food()):
+                elif lgro.images[i].is_food():
                     apples[int(namelower[5:6])-1] = True
-                elif(lgro.images[i].image_type == LGR_Image.PICTURE):
+                elif lgro.images[i].image_type == LGR_Image.PICTURE:
                     n_pic += 1
-                elif(lgro.images[i].image_type == LGR_Image.TEXTURE):
+                elif lgro.images[i].image_type == LGR_Image.TEXTURE:
                     n_tex += 1
-                elif(lgro.images[i].image_type == LGR_Image.MASK):
+                elif lgro.images[i].image_type == LGR_Image.MASK:
                     n_mask += 1
             else:
-                if(namelower == "qgrass"):
+                if namelower == "qgrass":
                     n_tex += 1
 
             for j in range(i+1, len_lgr, 1):
-                if(namelower == lgro.images[j].name.lower()):
-                        message.append([
-                            ERR_DUPLICATE_NAME,
-                            lgro.images[j],
-                            "The LGR file has a duplicate of the "
-                            "following filename: %s" % lgro.images[j].name])
+                if namelower == lgro.images[j].name.lower():
+                    message.append([
+                        ERR_DUPLICATE_NAME,
+                        lgro.images[j],
+                        "The LGR file has a duplicate of the "
+                        "following filename: %s" % lgro.images[j].name])
             message_temp = check_LGR_error(lgro.images[i], use_palette)
-            if(message_temp):
+            if message_temp:
                 message.extend(message_temp)
-        if(n_grass > LGR_GRASS_MAX):
+        if n_grass > LGR_GRASS_MAX:
             message.append([
                 ERR_TOO_MANY_GRASS,
                 n_grass,
                 "The LGR file has %s grass images but "
                 "can only support %s at most" % (n_grass, LGR_GRASS_MAX)])
-        if(n_pic > LGR_PIC_MAX):
+        if n_pic > LGR_PIC_MAX:
             message.append([
                 ERR_TOO_MANY_PICTURES,
                 n_pic,
                 "The LGR file has %s picture images but "
                 "can only support %s at most" % (n_pic, LGR_PIC_MAX)])
-        if(n_tex < LGR_TEX_MIN):
+        if n_tex < LGR_TEX_MIN:
             message.append([
                 ERR_NOT_ENOUGH_TEXTURES,
                 n_tex,
                 "The LGR file has %s texture images but "
                 "needs at least %s" % (n_tex, LGR_TEX_MIN)])
-        elif(n_tex > LGR_TEX_MAX):
+        elif n_tex > LGR_TEX_MAX:
             message.append([
                 ERR_TOO_MANY_TEXTURES,
                 n_tex,
                 "The LGR file has %s texture image(s) but "
                 "can only support %s at most" % (n_tex, LGR_TEX_MAX)])
-        if(n_mask > LGR_MASK_MAX):
+        if n_mask > LGR_MASK_MAX:
             message.append([
                 ERR_TOO_MANY_MASKS,
                 n_mask,
@@ -152,8 +152,8 @@ def check_LGR_error(lgro, palette=None):
                 "can only support %s at most" % (n_mask, LGR_MASK_MAX)])
         appleFinished = False
         for i in range(9):
-            if(apples[i]):
-                if(appleFinished):
+            if apples[i]:
+                if appleFinished:
                     message.append([
                         WARN_UNUSED_QFOOD,
                         None,
@@ -163,22 +163,22 @@ def check_LGR_error(lgro, palette=None):
                 appleFinished = True
 
         return message
-    elif(type(lgro).__name__ == "LGR_Image"):
+    elif type(lgro).__name__ == "LGR_Image":
         is_mask = False
         len_name = len(lgro.name)
-        if(len_name > 8):
+        if len_name > 8:
             message.append([
                 ERR_NAME_TOO_LONG,
                 lgro,
                 ("The name of %s is too long "
                  "(maximum 8 characters)") % lgro.name])
-        if(len_name == 0):
+        if len_name == 0:
             message.append([
                 ERR_NAME_MISSING,
                 lgro,
                 "An LGR_Image has no name! %s" % lgro])
         try:
-            if(len(bytes(lgro.padding)) != 7):
+            if len(bytes(lgro.padding)) != 7:
                 message.append([
                     ERR_PADDING_INVALID,
                     lgro,
@@ -191,8 +191,8 @@ def check_LGR_error(lgro, palette=None):
                 "%s's padding is invalid (must be an "
                 "array of 7 ints in range (0-255))" % lgro.name])
         namelower = lgro.name.lower()
-        if(lgro.is_object()):
-            if(lgro.img.height != LGR_OBJ_HEIGHT):
+        if lgro.is_object():
+            if lgro.img.height != LGR_OBJ_HEIGHT:
                 message.append([
                     WARN_OBJ_HEIGHT_INVALID,
                     lgro,
@@ -204,7 +204,7 @@ def check_LGR_error(lgro, palette=None):
                         lgro.name,
                         LGR_OBJ_HEIGHT,
                         lgro.img.height)])
-            if(lgro.img.width % LGR_OBJ_WIDTH != 0):
+            if lgro.img.width % LGR_OBJ_WIDTH != 0:
                 message.append([
                     ERR_OBJ_WIDTH_INVALID,
                     lgro,
@@ -213,7 +213,7 @@ def check_LGR_error(lgro, palette=None):
                         lgro.name,
                         lgro.img.width,
                         LGR_OBJ_WIDTH)])
-            if(lgro.img.width > LGR_OBJ_WIDTH*LGR_OBJ_FRAMES_MAX):
+            if lgro.img.width > LGR_OBJ_WIDTH*LGR_OBJ_FRAMES_MAX:
                 message.append([
                     ERR_OBJ_TOO_WIDE,
                     lgro,
@@ -222,75 +222,74 @@ def check_LGR_error(lgro, palette=None):
                         lgro.name,
                         lgro.img.width,
                         LGR_OBJ_WIDTH * LGR_OBJ_FRAMES_MAX)])
-        elif(lgro.is_in_pictures_lst()):
-                if(lgro.is_qup_qdown()):
-                    if(lgro.img.height < LGR_WARNING_GRASS_HEIGHT_MIN):
-                        message.append([
-                            WARN_GRASS_HEIGHT_TOO_SMALL,
-                            lgro,
-                            "Warning: %s should have a minimum "
-                            "height of %s, but the height is %s" % (
-                                lgro.name,
-                                LGR_WARNING_GRASS_HEIGHT_MIN,
-                                lgro.img.height)])
+        elif lgro.is_in_pictures_lst():
+            if lgro.is_qup_qdown():
+                if lgro.img.height < LGR_WARNING_GRASS_HEIGHT_MIN:
+                    message.append([
+                        WARN_GRASS_HEIGHT_TOO_SMALL,
+                        lgro,
+                        "Warning: %s should have a minimum "
+                        "height of %s, but the height is %s" % (
+                            lgro.name,
+                            LGR_WARNING_GRASS_HEIGHT_MIN,
+                            lgro.img.height)])
+            else:
+                if 100 > lgro.image_type < 102:
+                    message.append([
+                        ERR_IMAGE_TYPE_INVALID,
+                        lgro,
+                        "%s's image_type is invalid" % lgro.name])
                 else:
-                    if(100 > lgro.image_type < 102):
-                        message.append([
-                            ERR_IMAGE_TYPE_INVALID,
-                            lgro,
-                            "%s's image_type is invalid" % lgro.name])
-                    else:
-                        if(lgro.image_type == LGR_Image.PICTURE):
-                            if(lgro.img.width > LGR_PIC_WIDTH_MAX):
-                                message.append([
-                                    ERR_PIC_TOO_WIDE,
-                                    lgro,
-                                    "%s is too wide (%s) - the maximum is %s" %
-                                    (lgro.name,
-                                     lgro.img.width,
-                                     LGR_PIC_WIDTH_MAX)])
-                            if(lgro.img.width * lgro.img.height >
-                                    LGR_PIC_SIZE_MAX):
-                                message.append([
-                                    ERR_PIC_TOO_MANY_PIXELS,
-                                    lgro,
-                                    "%s has too many pixels (%s) - the "
-                                    "maximum is %s. Depending on the image, "
-                                    "the game might crash" % (
-                                        lgro.name,
-                                        lgro.img.width * lgro.img.height,
-                                        LGR_PIC_SIZE_MAX)])
-                        elif(lgro.image_type == LGR_Image.MASK):
-                            is_mask = True
-                    if(not(1 <= lgro.default_distance <= 999) and
-                            not(is_mask)):
-                        message.append([
-                            ERR_DISTANCE_INVALID,
-                            lgro,
-                            "%s's distance (%s) is invalid "
-                            "(must be integer between 1-999)" % (
-                                lgro.name,
-                                lgro.default_distance)])
-                    if(not(0 <= lgro.default_clipping <= 2) and not(is_mask)):
-                        message.append([
-                            ERR_CLIPPING_INVALID,
-                            lgro,
-                            "%s's clipping (%s) is invalid" % (
-                                lgro.name,
-                                lgro.default_clipping)])
-                    if(not(11 <= lgro.transparency <= 15)):
-                        message.append([
-                            ERR_TRANSPARENCY_INVALID,
-                            lgro,
-                            "%s's transparency (%s) is invalid" % (
-                                lgro.name,
-                                lgro.transparency)])
+                    if lgro.image_type == LGR_Image.PICTURE:
+                        if lgro.img.width > LGR_PIC_WIDTH_MAX:
+                            message.append([
+                                ERR_PIC_TOO_WIDE,
+                                lgro,
+                                "%s is too wide (%s) - the maximum is %s" %
+                                (lgro.name,
+                                 lgro.img.width,
+                                 LGR_PIC_WIDTH_MAX)])
+                        if(lgro.img.width * lgro.img.height >
+                                LGR_PIC_SIZE_MAX):
+                            message.append([
+                                ERR_PIC_TOO_MANY_PIXELS,
+                                lgro,
+                                "%s has too many pixels (%s) - the "
+                                "maximum is %s. Depending on the image, "
+                                "the game might crash" % (
+                                    lgro.name,
+                                    lgro.img.width * lgro.img.height,
+                                    LGR_PIC_SIZE_MAX)])
+                    elif lgro.image_type == LGR_Image.MASK:
+                        is_mask = True
+                if not(1 <= lgro.default_distance <= 999) and not is_mask:
+                    message.append([
+                        ERR_DISTANCE_INVALID,
+                        lgro,
+                        "%s's distance (%s) is invalid "
+                        "(must be integer between 1-999)" % (
+                            lgro.name,
+                            lgro.default_distance)])
+                if not(0 <= lgro.default_clipping <= 2) and not is_mask:
+                    message.append([
+                        ERR_CLIPPING_INVALID,
+                        lgro,
+                        "%s's clipping (%s) is invalid" % (
+                            lgro.name,
+                            lgro.default_clipping)])
+                if not(11 <= lgro.transparency <= 15):
+                    message.append([
+                        ERR_TRANSPARENCY_INVALID,
+                        lgro,
+                        "%s's transparency (%s) is invalid" % (
+                            lgro.name,
+                            lgro.transparency)])
 
-        if(lgro.img):
+        if lgro.img:
             with io.BytesIO() as f:
                 lgro.save_PCX(f)
                 size = f.tell()
-                if(size > LGR_PCX_FILESIZE_MAX):
+                if size > LGR_PCX_FILESIZE_MAX:
                     message.append([
                         ERR_FILE_TOO_LARGE,
                         lgro,
@@ -299,8 +298,7 @@ def check_LGR_error(lgro, palette=None):
                             lgro.name,
                             size,
                             LGR_PCX_FILESIZE_MAX)])
-            if((namelower in LGR_LIMITED_SIZE_FILES) and
-                    ((lgro.img.width > 255)or(lgro.img.height > 255))):
+            if namelower in LGR_LIMITED_SIZE_FILES and (lgro.img.width > 255 or lgro.img.height > 255):
                 message.append([
                     ERR_SMALL_IMAGE_TOO_LARGE,
                     lgro,
@@ -309,9 +307,8 @@ def check_LGR_error(lgro, palette=None):
                         lgro.name,
                         lgro.img.width,
                         lgro.img.height)])
-            if(lgro.is_valid_palette_image()):
-                if(palette and not is_mask and
-                        (lgro.get_palette() != palette)):
+            if lgro.is_valid_palette_image():
+                if palette and not is_mask and lgro.get_palette() != palette:
                     message.append([
                         WARN_PALETTE_MISMATCH,
                         lgro,
@@ -322,9 +319,8 @@ def check_LGR_error(lgro, palette=None):
                     ERR_IMAGE_INVALID_PALETTE,
                     lgro,
                     "%s has an invalid palette" % lgro.name])
-            if(namelower == "qcolors"):
-                if(lgro.img.width != LGR_WARNING_QCOLORS_WIDTH or
-                        lgro.img.height != LGR_WARNING_QCOLORS_HEIGHT):
+            if namelower == "qcolors":
+                if lgro.img.width != LGR_WARNING_QCOLORS_WIDTH or lgro.img.height != LGR_WARNING_QCOLORS_HEIGHT:
                     message.append([
                         WARN_QCOLORS_WRONG_SIZE,
                         lgro,
@@ -334,7 +330,7 @@ def check_LGR_error(lgro, palette=None):
                             LGR_WARNING_QCOLORS_HEIGHT,
                             lgro.img.width,
                             lgro.img.height)])
-            if(namelower == "q1bike" or namelower == "q2bike"):
+            if namelower == "q1bike" or namelower == "q2bike":
                 if(lgro.img.width < LGR_RECOMMEND_BIKE_WIDTH or
                         lgro.img.height < LGR_RECOMMEND_BIKE_HEIGHT):
                     message.append([

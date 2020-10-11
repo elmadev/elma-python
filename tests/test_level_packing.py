@@ -5,10 +5,7 @@ from elma.models import Obj
 from elma.models import Picture
 from elma.models import Point
 from elma.models import Polygon
-from elma.models import Top10
 from elma.models import Top10Time
-from elma.packing import pack_level
-from elma.packing import unpack_level
 import unittest
 
 
@@ -36,8 +33,8 @@ class TestLevelPacking(unittest.TestCase):
         level.top10.multi.append(Top10Time(709, 'player3', 'player2', True))
         level.top10.multi.append(Top10Time(714, 'player4', 'player1', True))
         original_level = level
-        packed = pack_level(level)
-        level = unpack_level(packed)
+        packed = level.pack()
+        level = Level.unpack(packed)
         self.assertEqual(2535781587, level.level_id)
         self.assertEqual('Unnamed', level.name)
         self.assertEqual('DEFAULT', level.lgr)
@@ -114,8 +111,8 @@ class TestLevelPacking(unittest.TestCase):
             Obj(Point(0, 0), Obj.KILLER),
             Obj(Point(0, 0), Obj.FOOD)
         ]
-        packed = pack_level(level, False)
-        level = unpack_level(packed)
+        packed = level.pack()
+        level = level.unpack(packed)
         self.assertEqual(VERSION_ACROSS, level.version)
         self.assertEqual(2535781587, level.level_id)
         self.assertEqual('Unnamed', level.name)
