@@ -1,5 +1,7 @@
+from collections import namedtuple
 from pathlib import Path
 from typing import Union
+
 
 try:
     bytes('A', 'latin1')
@@ -66,3 +68,6 @@ def check_writable_file(file: Union[str, Path], exist_ok: bool = False, create_d
         parent.mkdir(parents=True, exist_ok=True)
     elif not parent.exists():
         raise FileNotFoundError(f"Directory {parent} not found")
+
+
+BoundingBox = namedtuple('BoundingBox', ['min_x', 'max_x', 'min_y', 'max_y'])

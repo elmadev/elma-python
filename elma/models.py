@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from abc import ABCMeta
+from typing import List, Optional
+from PIL import Image
 from elma.constants import VERSION_ELMA
-from elma.utils import null_padded
+from elma.render import LevelRenderer
+from elma.utils import null_padded, BoundingBox
+import itertools
 import random
 import struct
 from math import cos, sin
@@ -194,6 +198,35 @@ class Polygon(object):
     def lowest_point(self):
         return min(self.points, key=lambda p: p.y)
 
+    def area(self) -> float:
+        """
+        Returns the area of the polygon
+        """
+        return abs(self._signed_area())
+
+    def is_ordered_clockwise(self) -> bool:
+        """
+        Returns True if the points of the polygon are ordered clockwise and
+        False if counterclockwise.
+        """
+        return self._signed_area() < 0
+
+    def is_filled(self) -> bool:
+        """
+        Returns True if the interior of the polygon is filled.
+        """
+        return not self.is_ordered_clockwise()
+
+    def _signed_area(self) -> float:
+        """
+        Returns the signed area of the polygon.
+        """
+        points = self.points
+        area = (points[0].x - points[-1].x) * (points[0].y + points[-1].y)
+        for i in range(len(self.points) - 1):
+            area += (points[i + 1].x - points[i].x) * (points[i + 1].y + points[i].y)
+        return area / 2
+
 
 class Top10Time(object):
     """
@@ -327,6 +360,79 @@ class Level(object):
         self.preserve_integrity_values = False
         self.integrity = []
 
+    @property
+    def ground_polygons(self) -> List[Polygon]:
+        """
+        Returns all non-grass polygons of the level.
+        """
+        return [polygon for polygon in self.polygons if not polygon.grass]
+
+    @property
+    def grass_polygons(self) -> List[Polygon]:
+        """
+        Returns all grass polygons of the level.
+        """
+        return [polygon for polygon in self.polygons if polygon.grass]
+
+    def as_image(self,
+                 *,
+                 max_width: Optional[int] = LevelRenderer.DEFAULT_WIDTH,
+                 max_height: Optional[int] = LevelRenderer.DEFAULT_HEIGHT,
+                 scale: Optional[float] = None,
+                 padding: int = LevelRenderer.DEFAULT_PADDING,
+                 render_objects: bool = True,
+                 show: bool = False) -> Image:
+        """
+        Render image of the level.
+
+        Args:
+            max_width: max width of the image (ignored if scale is provided)
+            max_height: max height of the image (ignored if scale is provided)
+            scale: scaling factor to convert level coordinates to pixels,
+                overrides max_width and max_height
+            padding: space around the image in pixels
+            render_objects: render both objects and polygons if True,
+                else render only polygons
+            show: show rendered image if True
+        """
+        if scale:
+            renderer = LevelRenderer.with_scale(level=self, scale=scale, padding=padding)
+        else:
+            renderer = LevelRenderer(level=self, max_width=max_width, max_height=max_height, padding=padding)
+        if show:
+            renderer.show(render_objects=render_objects)
+        return renderer.render(render_objects=render_objects)
+
+    def min_x(self) -> float:
+        """
+        Returns the minimum x coordinate of all vertices, pictures and objects.
+        """
+        return min([p.x for p in self._all_points()])
+
+    def max_x(self) -> float:
+        """
+        Returns the maximum x coordinate of all vertices, pictures and objects.
+        """
+        return max([p.x for p in self._all_points()])
+
+    def min_y(self) -> float:
+        """
+        Returns the minimum y coordinate of all vertices, pictures and objects.
+        """
+        return min([p.y for p in self._all_points()])
+
+    def max_y(self) -> float:
+        """
+        Returns the maximum y coordinate of all vertices, pictures and objects.
+        """
+        return max([p.y for p in self._all_points()])
+
+    def bounding_box(self) -> BoundingBox:
+        """
+        Returns the bounding box of the level.
+        """
+        return BoundingBox(self.min_x(), self.max_x(), self.min_y(), self.max_y())
+
     def save(self, file: Union[str, Path], allow_overwrite: bool = False, create_dirs: bool = False) -> None:
         """
         Save level to a file
@@ -401,6 +507,15 @@ class Level(object):
         return (self.polygons == other_level.polygons and
                 self.objects == other_level.objects and
                 self.pictures == other_level.pictures)
+
+    def _all_points(self) -> List[Point]:
+        """
+        Returns all coordinate points of vertices, pictures and level objects.
+        """
+        vertex_points = list(itertools.chain(*[polygon.points for polygon in self.polygons]))
+        picture_points = [pic.point for pic in self.pictures]
+        object_points = [obj.point for obj in self.objects]
+        return vertex_points + picture_points + object_points
 
 
 class Frame(object):
