@@ -1,4 +1,12 @@
+from __future__ import annotations
+
+import io
+import re
+import struct
+from pathlib import Path
+from typing import List, Union, Optional, BinaryIO
 from PIL import Image
+
 from elma.constants import LGR_DEFAULT_PALETTE
 from elma.constants import LGR_END_OF_FILE
 from elma.constants import LGR_FOOD_NAME
@@ -7,9 +15,6 @@ from elma.constants import LGR_OBJECT_NAME
 from elma.constants import LGR_PCX_PADDING
 from elma.constants import LGR_PICTURES_LST_ID
 from elma.utils import null_padded
-import io
-import re
-import struct
 
 
 class LGR_Image(object):
@@ -38,7 +43,7 @@ class LGR_Image(object):
             Should be one of: LGR_Image.CLIPPING_U, LGR_Image.CLIPPING_G,
             LGR_Image.CLIPPING_S. Only used if **is_in_pictures_lst()=True**
         transparency (int): The pixel corresponding to the color or item in a
-        palette that should be transperant. Should be one of:
+            palette that should be transparent. Should be one of:
             LGR_Image.TRANSPARENCY_PAL_ZERO, LGR_Image.TRANSPARENCY_TOPLEFT,
             LGR_Image.TRANSPARENCY_TOPRIGHT, LGR_Image.TRANSPARENCY_BOTTOMLEFT,
             LGR_Image.TRANSPARENCY_BOTTOMRIGHT. Only used if
@@ -60,7 +65,23 @@ class LGR_Image(object):
     TRANSPARENCY_BOTTOMLEFT = 14
     TRANSPARENCY_BOTTOMRIGHT = 15
 
-    def is_in_pictures_lst(self):
+    def __init__(self,
+                 name: str,
+                 img: Image = None,
+                 image_type: int = PICTURE,
+                 default_distance: int = 500,
+                 default_clipping: int = CLIPPING_S,
+                 transparency: int = TRANSPARENCY_TOPLEFT,
+                 padding: List[int] = LGR_PCX_PADDING) -> None:
+        self.name = name
+        self.img = img
+        self.padding = padding
+        self.image_type = image_type
+        self.default_distance = default_distance
+        self.default_clipping = default_clipping
+        self.transparency = transparency
+
+    def is_in_pictures_lst(self) -> bool:
         """
         Determines whether image with the given name appears in pictures.lst
         (i.e. has the extra variables image_type, default_distance,
@@ -70,22 +91,22 @@ class LGR_Image(object):
         """
         return self.name.lower() not in LGR_NOT_IN_PICTURES_LST
 
-    def get_palette(self):
+    def get_palette(self) -> List[int]:
         """
         Returns the palette of the image in the format [r, g, b, ...], or None
         if the image has no palette.
         """
         return self.img.getpalette()
 
-    def put_palette(self, palette):
+    def put_palette(self, palette: List[int]) -> None:
         """
         Sets the image's palette. Does NOT convert image colors. Can only be
         used on images that are palette-based.
         """
         self.img.putpalette(palette)
 
-    def convert_palette_image(self, palette_info=LGR_DEFAULT_PALETTE,
-                              dither=False):
+    def convert_palette_image(self, palette_info: List[int] = LGR_DEFAULT_PALETTE,
+                              dither: bool = False) -> None:
         """
         Converts the current image into an appropriate palette
         format, keeping the color as close to the original as possible.
@@ -102,7 +123,7 @@ class LGR_Image(object):
             self.img.convert(
                 mode='RGB').im.convert('P', dither, palette.im))
 
-    def is_valid_palette_image(self):
+    def is_valid_palette_image(self) -> bool:
         """
         Returns True if image has a palette of 256 rgb values.
         """
@@ -110,33 +131,33 @@ class LGR_Image(object):
                 self.img.palette.mode == 'RGB' and
                 len(self.get_palette()) == 768)
 
-    def save_PCX(self, filename):
+    def save_PCX(self, filename: Union[str, Path, BinaryIO]) -> None:
         """
         Writes the image as a .pcx file to `filename`.
         """
         self.img.save(filename, 'pcx')
 
-    def is_qup_qdown(self):
+    def is_qup_qdown(self) -> bool:
         """
         Checks if the current object name qualifies as a qup_* or qdown_* object.
         """
         name_lower = self.name.lower()
         return name_lower[:4] == "qup_" or name_lower[:6] == "qdown_"
 
-    def is_food(self):
+    def is_food(self) -> bool:
         """
         Checks if the current object name is qfood*.
         """
         return self.name.lower() in LGR_FOOD_NAME
 
-    def is_object(self):
+    def is_object(self) -> bool:
         """
         Checks if the current name is a recognized object (qfood*, qexit,
         qkiller)
         """
         return self.name.lower() in LGR_OBJECT_NAME
 
-    def is_special(self):
+    def is_special(self) -> bool:
         """
         Checks if the current object is a special object (i.e. treated
         differently from normal images, so that image_type, default_distance,
@@ -147,18 +168,7 @@ class LGR_Image(object):
                 self.is_food() or
                 self.is_qup_qdown())
 
-    def __init__(self, name, img=None, image_type=PICTURE,
-                 default_distance=500, default_clipping=CLIPPING_S,
-                 transparency=TRANSPARENCY_TOPLEFT, padding=LGR_PCX_PADDING):
-        self.name = name
-        self.img = img
-        self.padding = padding
-        self.image_type = image_type
-        self.default_distance = default_distance
-        self.default_clipping = default_clipping
-        self.transparency = transparency
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.is_in_pictures_lst():
             return (('LGR_Image(name: %s, img: %s, image_type: %s, ' +
                      'default_distance: %s, default_clipping: %s, ' +
@@ -169,7 +179,9 @@ class LGR_Image(object):
         return ('LGR_Image(name: %s, img: %s, padding: %s)' %
                 (self.name, self.img, self.padding))
 
-    def __eq__(self, other_picture):
+    def __eq__(self, other_picture: object) -> bool:
+        if not isinstance(other_picture, LGR_Image):
+            return NotImplemented
         if self.is_in_pictures_lst():
             return (self.name == other_picture.name and
                     self.img.mode == other_picture.img.mode and
@@ -200,13 +212,13 @@ class LGR(object):
             default palette from default.lgr
     """
 
-    def __init__(self, palette=None):
-        self.images = []
+    def __init__(self, palette: Optional[List[int]] = None) -> None:
+        self.images: List[LGR_Image] = []
         if not palette:
             palette = LGR_DEFAULT_PALETTE[:]
         self.palette = palette
 
-    def find_LGR_Image(self, filename):
+    def find_LGR_Image(self, filename: str) -> int:
         """
         Searches for an LGR_Image with the name of "filename" and returns the
         index number in the list of LGR.images. Case-insensitive. Returns
@@ -218,20 +230,20 @@ class LGR(object):
                 return i
         raise ValueError('\'%s\' not in LGR.images' % filename)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'LGR(images: %s)' % self.images
 
 
-def unpack_LGR(data):
+def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
     """
     Opens an LGR file when you pass raw data or a filename
     """
 
-    def get_int32(loc):
+    def get_int32(loc: int) -> int:
         return struct.unpack('<I', data[loc:loc+4])[0]
 
-    if type(data).__name__ == "str":
-        with open(data, 'rb') as f:
+    if isinstance(data_or_filename, str) or isinstance(data_or_filename, Path):
+        with open(data_or_filename, 'rb') as f:
             data = f.read()
 
     lgr = LGR()
@@ -257,8 +269,11 @@ def unpack_LGR(data):
     found_palette = False
     term = re.compile(b'.pcx\0', re.IGNORECASE)
     for i in range(n_pcx):
-        pcx_name = data[sp:sp+13]
-        pcx_name = pcx_name[:term.search(pcx_name).start()].decode('latin1')
+        pcx_name_bytes = data[sp:sp+13]
+        match = term.search(pcx_name_bytes)
+        if match is None:
+            raise RuntimeError(f"Invalid image name {pcx_name_bytes.decode('latin1')}")
+        pcx_name = pcx_name_bytes[:match.start()].decode('latin1')
         lst_pcx_match = False
         pcx_padding = [int.from_bytes(data[sp+12+1+k:sp+12+1+k+1],
                                       byteorder='little', signed=False)
@@ -289,13 +304,13 @@ def unpack_LGR(data):
     return lgr
 
 
-def pack_LGR(lgr):
+def pack_LGR(lgr: LGR) -> bytes:
     """
     Converts LGR object into its binary representation to be saved as an lgr
     file.
     """
 
-    def to_int32(val):
+    def to_int32(val: int) -> bytes:
         return struct.pack('<I', val)
 
     n_pics = 0

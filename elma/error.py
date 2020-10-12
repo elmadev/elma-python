@@ -1,7 +1,11 @@
-from elma.lgr import LGR_Image
+from __future__ import annotations
+
+import io
+from typing import Union, Optional, List
+
+from elma.lgr import LGR, LGR_Image
 from elma.constants import LGR_MANDATORY_FILES
 from elma.constants import LGR_LIMITED_SIZE_FILES
-import io
 
 LGR_PCX_MIN = 10    # unused as practically never important
 LGR_PCX_MAX = 3500    # unused as practically never important
@@ -56,14 +60,14 @@ WARN_QCOLORS_WRONG_SIZE = 5004
 WARN_QBIKE_TOO_SMALL = 5005
 
 
-def check_LGR_error(lgro, palette=None):
+def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = None) -> List[List]:
     """
     Returns a list of errors or warnings for an LGR object or LGR_Image object.
     If you pass an LGR_Image object, you can also put a palette that the object
     should have
     """
-    message = []
-    if type(lgro).__name__ == "LGR":
+    message: List[List] = []
+    if isinstance(lgro, LGR):
         use_palette = None
         if(len(lgro.palette) == 768 and
                 max(lgro.palette) <= 255 and
@@ -163,7 +167,7 @@ def check_LGR_error(lgro, palette=None):
                 appleFinished = True
 
         return message
-    elif type(lgro).__name__ == "LGR_Image":
+    elif isinstance(lgro, LGR_Image):
         is_mask = False
         len_name = len(lgro.name)
         if len_name > 8:

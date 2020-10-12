@@ -9,3 +9,7 @@ test:
 .PHONY: lint
 lint:
 	flake8 elma tests
+
+.PHONY: mypy
+mypy:
+	mypy elma tests

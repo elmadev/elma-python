@@ -1,22 +1,26 @@
+from __future__ import annotations
+
+import random
+import struct
+from typing import Union, Iterator, TYPE_CHECKING
+
+import elma.models
 from elma.constants import VERSION_ELMA
 from elma.constants import VERSION_ACROSS
 from elma.constants import END_OF_DATA_MARKER
 from elma.constants import END_OF_FILE_MARKER
 from elma.constants import END_OF_REPLAY_FILE_MARKER
-import elma.models
-from elma.utils import null_padded
-from elma.utils import crypt_top10
-import random
-import struct
+from elma.utils import null_padded, crypt_top10
 
-try:
-    bytes('A', 'latin1')
-    PY_VERSION = 3
-except TypeError:
-    PY_VERSION = 2
-    bytes = lambda a, b: a  # noqa
-    _chr = chr
-    chr = lambda a: a if type(a) == str else _chr(a) # noqa
+if TYPE_CHECKING:
+    # defined here to avoid circular import at runtime
+    LevelItem = Union[
+        elma.models.Point,
+        elma.models.Polygon,
+        elma.models.Obj,
+        elma.models.Picture,
+        elma.models.Level
+    ]
 
 packers = {
     'Point': lambda point:
@@ -46,7 +50,7 @@ packers = {
 }
 
 
-def pack_level(item, is_elma=True):
+def pack_level(item: LevelItem, is_elma: bool = True) -> bytes:
     """
     Pack a level-related item to its binary representation readable by
     Elasto Mania.
@@ -59,7 +63,10 @@ def pack_level(item, is_elma=True):
     if packer_name in packers:
         return packers[packer_name](item)
 
-    level = item
+    if isinstance(item, elma.models.Level):
+        level = item
+    else:
+        raise NotImplementedError(f"Packing not implemented for type {type(item)}.")
     if is_elma:
         assert (level.version == VERSION_ELMA)
     else:
@@ -133,15 +140,15 @@ def pack_level(item, is_elma=True):
         return b''.join(level_data)
 
 
-def unpack_level(data):
+def unpack_level(packed_item: bytes) -> elma.models.Level:
     """
     Unpack a level-related item from its binary representation readable by
     Elasto Mania.
     """
 
-    data = iter(data)
+    data = iter(packed_item)
 
-    def munch(n, dataiter=data):
+    def munch(n: int, dataiter: Iterator[int] = data) -> bytes:
         return b''.join([bytes(chr(next(dataiter)), 'latin1')
                          for _ in range(n)])
 
@@ -247,33 +254,33 @@ def unpack_level(data):
     return level
 
 
-def unpack_replay(data):
+def unpack_replay(packed_item: bytes) -> elma.models.Replay:
     """
     Unpack a replay-related item from its binary representation readable by
     Elasto Mania.
     """
 
-    data = iter(data)
+    data = iter(packed_item)
 
-    def munch(n):
+    def munch(n: int) -> bytes:
         return b''.join([bytes(chr(next(data)), 'latin1') for _ in range(n)])
 
-    def read_int32():
+    def read_int32() -> int:
         return struct.unpack('i', munch(4))[0]
 
-    def read_uint32():
+    def read_uint32() -> int:
         return struct.unpack('I', munch(4))[0]
 
-    def read_int16():
+    def read_int16() -> int:
         return struct.unpack('h', munch(2))[0]
 
-    def read_uint8():
+    def read_uint8() -> int:
         return struct.unpack('B', munch(1))[0]
 
-    def read_float():
+    def read_float() -> float:
         return struct.unpack('f', munch(4))[0]
 
-    def read_double():
+    def read_double() -> float:
         return struct.unpack('d', munch(8))[0]
 
     replay = elma.models.Replay()
@@ -283,7 +290,7 @@ def unpack_replay(data):
     replay.is_multi = bool(read_int32())
     replay.is_flagtag = bool(read_int32())
     replay.level_id = read_uint32()
-    replay.level_name = munch(12).split(b'\0')[0]
+    replay.level_name = munch(12).split(b'\0')[0].decode('latin1')
     munch(4)
 
     frame_numbers = range(number_of_replay_frames)
@@ -348,7 +355,7 @@ def unpack_replay(data):
         info = read_int16()
         event_type = read_int16()
         event_sound_volume = read_float()
-
+        event: elma.models.Event
         if event_type == 0:
             event = elma.models.ObjectTouchEvent()
             event.object_number = info
@@ -363,6 +370,8 @@ def unpack_replay(data):
             event.event_sound_volume = event_sound_volume
         elif event_type == 4:
             event = elma.models.AppleTouchEvent()
+        else:
+            raise NotImplementedError(f"Event type {event_type} not implemented.")
 
         event.time = event_time
         replay.events.append(event)
@@ -401,7 +410,7 @@ def unpack_replay(data):
     return replay
 
 
-def pack_replay(item):
+def pack_replay(item: Union[elma.models.Event, elma.models.Replay]) -> bytes:
     """
     Pack a replay-related item to its binary representation readable by
     Elasto Mania.
@@ -441,12 +450,12 @@ def pack_replay(item):
                 struct.pack('h', -1) +
                 struct.pack('h', 4) +
                 struct.pack('f', 0.99))
-
-    replay = item
-    if PY_VERSION == 2:
-        name = null_padded(replay.level_name, 12)
+    if isinstance(item, elma.models.Replay):
+        replay = item
     else:
-        name = null_padded(replay.level_name.decode('latin1'), 12)
+        raise NotImplementedError(f"Packing not implemented for type {type(item)}")
+
+    name = null_padded(replay.level_name, 12)
     return b''.join([
         struct.pack('i', len(replay.frames)),
         struct.pack('i', 0x83),

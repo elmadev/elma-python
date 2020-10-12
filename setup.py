@@ -14,4 +14,8 @@ setup(
     install_requires=[
         'pillow>=4.0.0',
     ],
+    tests_require=[
+        'flake8>=3.3.0',
+        'mypy>=0.700'
+    ]
 )

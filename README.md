@@ -120,6 +120,13 @@ To lint the project, do:
 make lint
 ```
 
+## Type checking
+
+To run static type checking with mypy, do:
+
+```
+make mypy
+```
 
 ## Contributing
 

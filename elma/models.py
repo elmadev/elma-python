@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from abc import ABCMeta
-from typing import List, Optional
-from PIL import Image
-from elma.constants import VERSION_ELMA
-from elma.render import LevelRenderer
-from elma.utils import null_padded, BoundingBox
 import itertools
 import random
 import struct
+from abc import ABCMeta
 from math import cos, sin
 from pathlib import Path
-from typing import Union
+from typing import List, Optional, Union
+from PIL import Image
 
 import elma.packing
-from elma.utils import check_writable_file
+from elma.constants import VERSION_ELMA
+from elma.render import LevelRenderer
+from elma.utils import null_padded, BoundingBox, check_writable_file
 
 
 class Point(object):
@@ -25,14 +23,16 @@ class Point(object):
         x (float): The x-coordinate of the point.
         y (float): The y-coordinate of the point.
     """
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Point(x: %s, y: %s)' % (self.x, self.y)
 
-    def __eq__(self, other_point):
+    def __eq__(self, other_point: object) -> bool:
+        if not isinstance(other_point, Point):
+            return NotImplemented
         return self.x == other_point.x and self.y == other_point.y
 
 
@@ -62,19 +62,24 @@ class Obj(object):
     GRAVITY_LEFT = 3
     GRAVITY_RIGHT = 4
 
-    def __init__(self, point, type,
-                 gravity=GRAVITY_NORMAL, animation_number=1):
+    def __init__(self,
+                 point: Point,
+                 type: int,
+                 gravity: int = GRAVITY_NORMAL,
+                 animation_number: int = 1) -> None:
         self.point = point
         self.type = type
         self.gravity = gravity
         self.animation_number = animation_number
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             'Obj(point: %s, type: %s, gravity: %s, animation_number: %s)' %
             (self.point, self.type, self.gravity, self.animation_number))
 
-    def __eq__(self, other_obj):
+    def __eq__(self, other_obj: object) -> bool:
+        if not isinstance(other_obj, Obj):
+            return NotImplemented
         return (self.point == other_obj.point and
                 self.type == other_obj.type and
                 self.gravity == other_obj.gravity and
@@ -103,8 +108,13 @@ class Picture(object):
     CLIPPING_G = 1
     CLIPPING_S = 2
 
-    def __init__(self, point, picture_name='', texture_name='',
-                 mask_name='', distance=500, clipping=CLIPPING_U):
+    def __init__(self,
+                 point: Point,
+                 picture_name: str = '',
+                 texture_name: str = '',
+                 mask_name: str = '',
+                 distance: int = 500,
+                 clipping: int = CLIPPING_U) -> None:
         self.point = point
         self.picture_name = picture_name
         self.texture_name = texture_name
@@ -112,14 +122,16 @@ class Picture(object):
         self.distance = distance
         self.clipping = clipping
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             ('Picture(point: %s, picture_name: %s, texture_name: %s,' +
              'mask_name: %s, distance: %s, clipping: %s)') %
             (self.point, self.picture_name, self.texture_name,
              self.mask_name, self.distance, self.clipping))
 
-    def __eq__(self, other_picture):
+    def __eq__(self, other_picture: object) -> bool:
+        if not isinstance(other_picture, Picture):
+            return NotImplemented
         return (self.point == other_picture.point and
                 self.picture_name == other_picture.picture_name and
                 self.texture_name == other_picture.texture_name and
@@ -137,32 +149,34 @@ class Polygon(object):
         grass (boolean): A boolean deciding whether or not the polygon is a
             grass polygon.
     """
-    def __init__(self, points, grass=False):
+    def __init__(self, points: List[Point], grass: bool = False) -> None:
         self.points = points
         self.grass = grass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Polygon(points: %s, grass: %s)' % (self.points, self.grass)
 
-    def __eq__(self, other_polygon):
+    def __eq__(self, other_polygon: object) -> bool:
+        if not isinstance(other_polygon, Polygon):
+            return NotImplemented
         return (self.points == other_polygon.points and
                 self.grass == other_polygon.grass)
 
-    def move_by(self, x=0, y=0):
+    def move_by(self, x: float = 0, y: float = 0) -> None:
         self.points = [Point(p.x + x, p.y + y) for p in self.points]
 
-    def mirror(self):
+    def mirror(self) -> None:
         mirror_axis = (self.rightmost_point().x +
                        self.leftmost_point().x) / 2.0
         for p in self.points:
             p.x = 2 * mirror_axis - p.x
 
-    def flip(self):
+    def flip(self) -> None:
         flip_axis = (self.highest_point().y + self.lowest_point().y) / 2.0
         for p in self.points:
             p.y = 2 * flip_axis - p.y
 
-    def rotate(self, angle, fixed_point=None):
+    def rotate(self, angle: float, fixed_point: Optional[Point] = None) -> None:
         if fixed_point is None:
             fixed_point = self.center_point()
         for p in self.points:
@@ -171,13 +185,13 @@ class Polygon(object):
             p.x = norm_x * cos(angle) - norm_y * sin(angle) + fixed_point.x
             p.y = norm_x * sin(angle) + norm_y * cos(angle) + fixed_point.y
 
-    def scale(self, scaler):
+    def scale(self, scaler: float) -> None:
         fixed_point = Point(self.leftmost_point().x, self.lowest_point().y)
         for p in self.points:
             p.x = scaler * (p.x - fixed_point.x) + fixed_point.x
             p.y = scaler * (p.y - fixed_point.y) + fixed_point.y
 
-    def center_point(self):
+    def center_point(self) -> Point:
         center = Point(0.0, 0.0)
         for p in self.points:
             center.x += p.x
@@ -186,16 +200,16 @@ class Polygon(object):
         center.y /= len(self.points)
         return center
 
-    def rightmost_point(self):
+    def rightmost_point(self) -> Point:
         return max(self.points, key=lambda p: p.x)
 
-    def leftmost_point(self):
+    def leftmost_point(self) -> Point:
         return min(self.points, key=lambda p: p.x)
 
-    def highest_point(self):
+    def highest_point(self) -> Point:
         return max(self.points, key=lambda p: p.y)
 
-    def lowest_point(self):
+    def lowest_point(self) -> Point:
         return min(self.points, key=lambda p: p.y)
 
     def area(self) -> float:
@@ -239,20 +253,26 @@ class Top10Time(object):
             singleplayer times.
         is_multi (boolean): Whether or not the time is a multiplayer time.
     """
-    def __init__(self, time, kuski, kuski2=None, is_multi=False):
+    def __init__(self,
+                 time: int,
+                 kuski: str,
+                 kuski2: Optional[str] = None,
+                 is_multi: bool = False) -> None:
         self.time = time
         self.kuski = kuski
         self.kuski2 = kuski if kuski2 is None else kuski2
         self.is_multi = is_multi
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.is_multi:
             return ('Top10Time(time: %s, kuski: %s, kuski2: %s)' %
                     (self.time, self.kuski, self.kuski2))
         else:
             return 'Top10Time(time: %s, kuski: %s)' % (self.time, self.kuski)
 
-    def __eq__(self, other_time):
+    def __eq__(self, other_time: object) -> bool:
+        if not isinstance(other_time, Top10Time):
+            return NotImplemented
         return (self.time == other_time.time and
                 self.kuski == other_time.kuski and
                 self.kuski2 == other_time.kuski2)
@@ -267,18 +287,18 @@ class Top10(object):
         single (list): A list of up to 10 singleplayer Top10Times.
         multi (list): A list of up to 10 multiplayer Top10Times.
     """
-    def __init__(self):
-        self.single = []
-        self.multi = []
+    def __init__(self) -> None:
+        self.single: List[Top10Time] = []
+        self.multi: List[Top10Time] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Top10(single: %s, multi: %s)' % (self.single, self.multi)
 
-    def sort(self):
+    def sort(self) -> None:
         self.single = sorted(self.single, key=lambda t: t.time)[:10]
         self.multi = sorted(self.multi, key=lambda t: t.time)[:10]
 
-    def merge(self, other_top10):
+    def merge(self, other_top10: Top10) -> None:
         for s in self.single:
             for o in other_top10.single:
                 if s.time == o.time and s.kuski == o.kuski:
@@ -295,7 +315,7 @@ class Top10(object):
         self.multi.extend([o for o in other_top10.multi])
         self.sort()
 
-    def to_buffer(self):
+    def to_buffer(self) -> bytes:
         self.sort()
         return b''.join([
             struct.pack('I', len(self.single)),
@@ -346,11 +366,11 @@ class Level(object):
         integrity (list): A list of four integrity values read from an existing
             level. Empty, if preserve_integrity_values is False.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.version = VERSION_ELMA
-        self.polygons = []
-        self.objects = []
-        self.pictures = []
+        self.polygons: List[Polygon] = []
+        self.objects: List[Obj] = []
+        self.pictures: List[Picture] = []
         self.level_id = random.randint(0, (2 ** 32) - 1)
         self.name = 'Unnamed'
         self.lgr = 'DEFAULT'
@@ -358,7 +378,7 @@ class Level(object):
         self.sky_texture = 'sky'
         self.top10 = Top10()
         self.preserve_integrity_values = False
-        self.integrity = []
+        self.integrity: List[float] = []
 
     @property
     def ground_polygons(self) -> List[Polygon]:
@@ -496,13 +516,15 @@ class Level(object):
         level = elma.packing.unpack_level(packed_level)
         return level
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (('Level(level_id: %s, name: %s, lgr: %s, ' +
                  'ground_texture: %s, sky_texture: %s)') %
                 (self.level_id, self.name, self.lgr,
                  self.ground_texture, self.sky_texture))
 
-    def __eq__(self, other_level):
+    def __eq__(self, other_level: object) -> bool:
+        if not isinstance(other_level, Level):
+            return NotImplemented
         # level_id, integrity and name can differ
         return (self.polygons == other_level.polygons and
                 self.objects == other_level.objects and
@@ -550,13 +572,13 @@ class Frame(object):
         self.rotation = 0
         self.left_wheel_rotation = 0
         self.right_wheel_rotation = 0
-        self.is_gasing = 0
-        self.is_turned_right = 0
+        self.is_gasing = False
+        self.is_turned_right = False
         self.spring_sound_effect_volume = 0
         # Needed to preserve unknown bits from rec files
         self._gas_and_turn_state = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ('Frame(position: %s, left_wheel_position: %s, ' +
                 'right_wheel_position: %s, head_position: %s, ' +
                 'rotation: %s, left_wheel_rotation: %s, ' +
@@ -584,10 +606,10 @@ class Event(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self):
-        self.time = 0
+    def __init__(self) -> None:
+        self.time = 0.0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s(time: %s)' % (self.__class__.__name__, self.time)
 
 
@@ -598,11 +620,11 @@ class ObjectTouchEvent(Event):
     Attributes:
         object_number (int): Index number of the touched object
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.object_number = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s(time: %s, object_number: %s)' % (
             self.__class__.__name__, self.time, self.object_number)
 
@@ -633,9 +655,9 @@ class GroundTouchEvent(Event):
         event_sound_volume (float): The volume of the caused by the impact of
             touching the ground within range [0, 0.99].
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.event_sound_volume = 0
+        self.event_sound_volume = 0.0
 
 
 class AppleTouchEvent(Event):
@@ -660,14 +682,14 @@ class Replay(object):
         events (list): The events of this replay.
         time (float): The time of this replay in seconds.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.is_finished = False
         self.is_multi = False
         self.is_flagtag = False
         self.level_id = 0
         self.level_name = ''
-        self.frames = []
-        self.events = []
+        self.frames: List[Frame] = []
+        self.events: List[Event] = []
         self.time = 0.0
 
     def save(self, file: Union[str, Path], allow_overwrite: bool = False, create_dirs: bool = False) -> None:
@@ -732,7 +754,7 @@ class Replay(object):
         replay = elma.packing.unpack_replay(packed_replay)
         return replay
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             'Replay(is_multi: %s, is_flagtag: %s, level_id: %s, ' +
             'level_name: %s, len(frames): %s, len(events): %s)') % (
