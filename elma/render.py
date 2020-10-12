@@ -28,7 +28,7 @@ class LevelRenderer:
         """
         self.level = level
         self.padding = padding
-        self.scale = None
+        self.scale = float("inf")
         self._min_x, self._max_x, self._min_y, self._max_y = level.bounding_box()
         # use defaults if both size limits are None
         if max_width is None and max_height is None:

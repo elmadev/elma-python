@@ -10,12 +10,12 @@ import random
 import struct
 
 try:
-    bytes('A', 'latin1')
+    bytes('A', 'latin1')  # type: ignore
     PY_VERSION = 3
 except TypeError:
     PY_VERSION = 2
     bytes = lambda a, b: a  # noqa
-    _chr = chr
+    _chr = chr  # type: ignore
     chr = lambda a: a if type(a) == str else _chr(a) # noqa
 
 packers = {
