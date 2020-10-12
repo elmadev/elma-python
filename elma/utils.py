@@ -3,14 +3,7 @@ from pathlib import Path
 from typing import Union
 
 
-try:
-    bytes('A', 'latin1')
-except TypeError:
-    bytes = lambda a, b: a  # noqa
-    chr = lambda a: a if type(a) == str else chr(a)  # noqa
-
-
-def null_padded(string, length):
+def null_padded(string: str, length: int) -> bytes:
     """
     Force a string to a given length by right-padding it with zero-bytes,
     clipping the initial string if necessary.
@@ -18,7 +11,7 @@ def null_padded(string, length):
     return bytes(string[:length] + ('\0' * (length - len(string))), 'latin1')
 
 
-def signed_mod(a, b):
+def signed_mod(a: int, b: int) -> int:
     """
     Signed modulo operation for level top10 encryption/decryption.
     """
@@ -29,7 +22,7 @@ def signed_mod(a, b):
     return r
 
 
-def crypt_top10(buffer):
+def crypt_top10(buffer: bytes) -> bytes:
     """
     Encrypt or decrypt the raw top10 buffer containing both
     singleplayer and multiplayer top10s.

@@ -14,7 +14,7 @@ class TestReplayPacking(unittest.TestCase):
         self.assertEqual(False, replay.is_multi)
         self.assertEqual(False, replay.is_flagtag)
         self.assertEqual(2958928182, replay.level_id)
-        self.assertEqual(b'sig0957.lev', replay.level_name)
+        self.assertEqual('sig0957.lev', replay.level_name)
         self.assertEqual(857, len(replay.frames))
         self.assertEqual(83, len(replay.events))
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -37,7 +37,7 @@ class TestReplayPacking(unittest.TestCase):
             self.assertEqual(False, rec.is_multi)
             self.assertEqual(False, rec.is_flagtag)
             self.assertEqual(132439557, rec.level_id)
-            self.assertEqual(b'aint01.lev', rec.level_name)
+            self.assertEqual('aint01.lev', rec.level_name)
             self.assertEqual(458, len(rec.frames))
             self.assertEqual(42, len(rec.events))
 
