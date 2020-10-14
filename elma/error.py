@@ -7,6 +7,8 @@ from elma.lgr import LGR, LGR_Image
 from elma.constants import LGR_MANDATORY_FILES
 from elma.constants import LGR_LIMITED_SIZE_FILES
 
+__all__ = ["check_LGR_error"]
+
 LGR_PCX_MIN = 10    # unused as practically never important
 LGR_PCX_MAX = 3500    # unused as practically never important
 LGR_PCX_FILESIZE_MIN = 1    # unused as practically never important

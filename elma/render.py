@@ -5,6 +5,8 @@ from PIL import Image, ImageDraw
 import elma.models
 from elma.constants import OBJECT_RADIUS
 
+__all__ = ["LevelRenderer"]
+
 
 class LevelRenderer:
 
