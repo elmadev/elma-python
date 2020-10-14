@@ -12,6 +12,8 @@ from elma.constants import END_OF_FILE_MARKER
 from elma.constants import END_OF_REPLAY_FILE_MARKER
 from elma.utils import null_padded, crypt_top10
 
+__all__ = ["pack_level", "unpack_level", "pack_replay", "unpack_replay"]
+
 if TYPE_CHECKING:
     # defined here to avoid circular import at runtime
     LevelItem = Union[

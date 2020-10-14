@@ -25,12 +25,7 @@ pip install elma
 
 ### Creating a simple level
 ```python
-from elma.models import Level
-from elma.models import Obj
-from elma.models import Picture
-from elma.models import Point
-from elma.models import Polygon
-
+from elma import Level, Obj, Picture, Point, Polygon
 
 level = Level()
 level.name = 'My first level'
@@ -57,7 +52,7 @@ The above snippet defines a simple level that looks like this:
 
 ### Loading a level from a file
 ```python
-from elma.models import Level
+from elma import Level
 
 level = Level.load('mylevel.lev')
 ```
@@ -71,7 +66,7 @@ level.save('mylevel.lev')
 
 ### Merging level top10s
 ```python
-from elma.models import Level
+from elma import Level
 
 level1 = Level.load('mylevel1.lev')
 level2 = Level.load('mylevel2.lev')
@@ -84,7 +79,7 @@ if level1 == level2:
 
 ### Loading a replay from a file
 ```python
-from elma.models import Replay
+from elma import Replay
 
 replay = Replay.load('myreplay.rec')
 ```
