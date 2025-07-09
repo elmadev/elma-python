@@ -14,6 +14,7 @@ from elma.constants import LGR_NOT_IN_PICTURES_LST
 from elma.constants import LGR_OBJECT_NAME
 from elma.constants import LGR_PCX_PADDING
 from elma.constants import LGR_PICTURES_LST_ID
+from elma.constants import LGR_NO_SCALING_FILES
 from elma.utils import null_padded
 
 __all__ = ["LGR_Image", "LGR", "unpack_LGR", "pack_LGR"]
@@ -53,6 +54,8 @@ class LGR_Image(object):
             the palette index 0 is selected as the transparent color.
         padding (int[7]): Each LGR entry has 7 bytes of padding that are
             unused. This can in theory be used to store extra information.
+        width (int): Scaled width of the image (LGR13 only), or -1 if unspecified
+        height (int): Scaled height of the image (LGR13 only), or -1 if unspecified
     """
 
     CLIPPING_U = 0
@@ -74,7 +77,9 @@ class LGR_Image(object):
                  default_distance: int = 500,
                  default_clipping: int = CLIPPING_S,
                  transparency: int = TRANSPARENCY_TOPLEFT,
-                 padding: List[int] = LGR_PCX_PADDING) -> None:
+                 padding: List[int] = LGR_PCX_PADDING,
+                 width: int = -1,
+                 height: int = -1) -> None:
         self.name = name
         self.img = img
         self.padding = padding
@@ -82,6 +87,8 @@ class LGR_Image(object):
         self.default_distance = default_distance
         self.default_clipping = default_clipping
         self.transparency = transparency
+        self.width = width
+        self.height = height
 
     def is_in_pictures_lst(self) -> bool:
         """
@@ -170,6 +177,18 @@ class LGR_Image(object):
                 self.is_food() or
                 self.is_qup_qdown())
 
+    def is_unscalable(self) -> bool:
+        """
+        Returns True if this image's scaling is ignored in the LGR13 file format"""
+        return self.name.lower() in LGR_NO_SCALING_FILES
+
+    def is_scaled(self) -> bool:
+        """
+        Returns True if this image has width and height properties that are different from the actual images'
+        pixel array sizes
+        """
+        return self.height != -1 and self.height != self.img.height or self.width != -1 and self.width != self.img.width
+
     def __repr__(self) -> str:
         if self.is_in_pictures_lst():
             return (('LGR_Image(name: %s, img: %s, image_type: %s, ' +
@@ -212,13 +231,15 @@ class LGR(object):
         palette: Palette to use in the LGR file. Should be an array 768 bytes
             long in the format [r,g,b,r,g,b,...]. Inputting -1 will use the
             default palette from default.lgr
+        version: LGR version (12 or 13)
     """
 
-    def __init__(self, palette: Optional[List[int]] = None) -> None:
+    def __init__(self, palette: Optional[List[int]] = None, version: int = 12) -> None:
         self.images: List[LGR_Image] = []
         if not palette:
             palette = LGR_DEFAULT_PALETTE[:]
         self.palette = palette
+        self.version = version
 
     def find_LGR_Image(self, filename: str) -> int:
         """
@@ -232,8 +253,14 @@ class LGR(object):
                 return i
         raise ValueError('\'%s\' not in LGR.images' % filename)
 
+    def is_valid_version(self) -> bool:
+        """
+        Returns True if the lgr version is 12 or 13
+        """
+        return self.version == 12 or self.version == 13
+
     def __repr__(self) -> str:
-        return 'LGR(images: %s)' % self.images
+        return 'LGR(images: %s, version: %s)' % (self.images, self.version)
 
 
 def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
@@ -244,6 +271,9 @@ def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
     def get_int32(loc: int) -> int:
         return struct.unpack('<I', data[loc:loc+4])[0]
 
+    def get_int16(loc: int) -> int:
+        return struct.unpack('<H', data[loc:loc+2])[0]
+
     if isinstance(data_or_filename, str) or isinstance(data_or_filename, Path):
         with open(data_or_filename, 'rb') as f:
             data = f.read()
@@ -251,9 +281,12 @@ def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
     lgr = LGR()
     pictures = []  # temp list to retain order of files by pcx order instead of Pictures.lst
 
-    assert(data[0:5] == b'LGR12')
+    assert (data[0:3] == b'LGR')
+    lgr.version = int(data[3:5], 10)
+    assert lgr.is_valid_version()
+
     n_pcx = get_int32(5)
-    assert(get_int32(9) == LGR_PICTURES_LST_ID)
+    assert (get_int32(9) == LGR_PICTURES_LST_ID)
     n_pics = get_int32(13)
 
     for i in range(n_pics):
@@ -272,16 +305,26 @@ def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
     term = re.compile(b'.pcx\0', re.IGNORECASE)
     for i in range(n_pcx):
         pcx_name_bytes = data[sp:sp+13]
+        sp += 13
         match = term.search(pcx_name_bytes)
         if match is None:
             raise RuntimeError(f"Invalid image name {pcx_name_bytes.decode('latin1')}")
         pcx_name = pcx_name_bytes[:match.start()].decode('latin1')
         lst_pcx_match = False
-        pcx_padding = [int.from_bytes(data[sp+12+1+k:sp+12+1+k+1],
+        pcx_padding = [int.from_bytes(data[sp+k:sp+k+1],
                                       byteorder='little', signed=False)
                        for k in range(7)]
-        pcx_len = get_int32(sp+20)
-        pcx_img = Image.open(io.BytesIO(data[sp+24:sp+24+pcx_len]))
+        sp += 7
+        width = -1
+        height = -1
+        if lgr.version == 13:
+            width = get_int16(sp)
+            sp += 2
+            height = get_int16(sp)
+            sp += 2
+        pcx_len = get_int32(sp)
+        sp += 4
+        pcx_img = Image.open(io.BytesIO(data[sp:sp+pcx_len]))
         if pcx_name.lower() == 'q1bike':
             lgr.palette = pcx_img.getpalette()
             found_palette = True
@@ -289,6 +332,8 @@ def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
             if obj.name.lower() == pcx_name.lower():
                 obj.img = pcx_img
                 obj.padding = pcx_padding
+                obj.width = width
+                obj.height = height
                 lgr.images.append(obj)
                 lst_pcx_match = True
                 break
@@ -296,8 +341,10 @@ def unpack_LGR(data_or_filename: Union[bytes, str, Path]) -> LGR:
             lgr.images.append(LGR_Image(
                 name=pcx_name,
                 img=pcx_img,
-                padding=pcx_padding))
-        sp = sp+24+pcx_len
+                padding=pcx_padding,
+                width=width,
+                height=height))
+        sp += pcx_len
     if not found_palette and lgr.images:
         lgr.images[0].get_palette()
 
@@ -315,6 +362,11 @@ def pack_LGR(lgr: LGR) -> bytes:
     def to_int32(val: int) -> bytes:
         return struct.pack('<I', val)
 
+    def to_int16(val: int) -> bytes:
+        return struct.pack('<H', val)
+
+    assert lgr.is_valid_version()
+    version = f"{lgr.version:02}".encode('ascii')
     n_pics = 0
     l_name = []
     l_image_type = []
@@ -334,14 +386,34 @@ def pack_LGR(lgr: LGR) -> bytes:
             obj.save_PCX(f)
             x_len = f.tell()
             f.seek(0)
-            x.extend([
-                null_padded('%s.pcx' % obj.name, 13),
-                bytes(obj.padding),
-                to_int32(x_len),
-                f.read()])
+            if lgr.version == 12:
+                if ((obj.width != -1 and obj.width != obj.img.width) or
+                        (obj.height != -1 and obj.height != obj.img.height)):
+                    raise ValueError(f"The image '{obj.name}' {obj.width}/{obj.height} {obj.img.width}/{obj.img.height}"
+                                     " is scaled and therefore is only compatible with LGR13, not LGR12.")
+                x.extend([
+                    null_padded('%s.pcx' % obj.name, 13),
+                    bytes(obj.padding),
+                    to_int32(x_len),
+                    f.read()])
+            else:
+                width = obj.width
+                height = obj.height
+                if obj.width == -1:
+                    width = obj.img.width
+                if obj.height == -1:
+                    height = obj.img.height
+                x.extend([
+                    null_padded('%s.pcx' % obj.name, 13),
+                    bytes(obj.padding),
+                    to_int16(width),
+                    to_int16(height),
+                    to_int32(x_len),
+                    f.read()])
 
     return b"".join([
-        b'LGR12',
+        b'LGR',
+        version,
         to_int32(len(lgr.images)),
         to_int32(LGR_PICTURES_LST_ID),
         to_int32(n_pics),

@@ -14,8 +14,6 @@ LGR_PCX_MAX = 3500    # unused as practically never important
 LGR_PCX_FILESIZE_MIN = 1    # unused as practically never important
 LGR_PCX_FILESIZE_MAX = 10000000
 LGR_PIC_MAX = 999
-LGR_PIC_WIDTH_MAX = 6000
-LGR_PIC_SIZE_MAX = 600000
 LGR_TEX_MIN = 2
 LGR_TEX_MAX = 99
 LGR_MASK_MAX = 199
@@ -37,6 +35,8 @@ ERR_TOO_MANY_TEXTURES = 5
 ERR_NOT_ENOUGH_TEXTURES = 6
 ERR_TOO_MANY_PICTURES = 7
 ERR_TOO_MANY_MASKS = 8
+ERR_LGR_INVALID_VERSION = 9
+ERR_SCALED_IMAGE_IN_LGR12 = 10
 WARN_UNUSED_QFOOD = 501
 
 ERR_FILE_TOO_LARGE = 1001
@@ -46,8 +46,8 @@ ERR_PADDING_INVALID = 1004
 ERR_IMAGE_TYPE_INVALID = 1005
 ERR_DISTANCE_INVALID = 1006
 ERR_TRANSPARENCY_INVALID = 1007
-ERR_PIC_TOO_WIDE = 1008
-ERR_PIC_TOO_MANY_PIXELS = 1009
+# ERR_PIC_TOO_WIDE = 1008 # no longer used
+# ERR_PIC_TOO_MANY_PIXELS = 1009 # no longer used
 ERR_OBJ_WIDTH_INVALID = 1010
 ERR_OBJ_TOO_WIDE = 1011
 ERR_SMALL_IMAGE_TOO_LARGE = 1012
@@ -60,6 +60,7 @@ WARN_GRASS_HEIGHT_TOO_SMALL = 5002
 WARN_PALETTE_MISMATCH = 5003
 WARN_QCOLORS_WRONG_SIZE = 5004
 WARN_QBIKE_TOO_SMALL = 5005
+WARN_IGNORED_SCALING = 5006
 
 
 def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = None) -> List[List]:
@@ -71,9 +72,7 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
     message: List[List] = []
     if isinstance(lgro, LGR):
         use_palette = None
-        if(len(lgro.palette) == 768 and
-                max(lgro.palette) <= 255 and
-                min(lgro.palette) >= 0):
+        if len(lgro.palette) == 768 and max(lgro.palette) <= 255 and min(lgro.palette) >= 0:
             use_palette = lgro.palette
         else:
             message.append([
@@ -82,6 +81,12 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                 "The LGR file has an invalid palette! Please set a palette "
                 "using get_palette() on one of the images or using "
                 "LGR_Image.default_palette()"])
+        if not lgro.is_valid_version():
+            message.append([
+                ERR_LGR_INVALID_VERSION,
+                None,
+                f"The LGR file has an invalid version: {lgro.version}"])
+
         n_pic = 0
         n_tex = 0
         n_mask = 0
@@ -123,6 +128,13 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                         lgro.images[j],
                         "The LGR file has a duplicate of the "
                         "following filename: %s" % lgro.images[j].name])
+            if lgro.version == 12 and lgro.images[i].is_scaled():
+                message.append([
+                    ERR_SCALED_IMAGE_IN_LGR12,
+                    lgro.images[j],
+                    f"The LGR file has a scaled image ({lgro.images[j].name}), but this is not supported in version "
+                    "12. Use version 13 instead."])
+
             message_temp = check_LGR_error(lgro.images[i], use_palette)
             if message_temp:
                 message.extend(message_temp)
@@ -190,15 +202,21 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                     lgro,
                     "%s's padding is invalid (must be an "
                     "array of 7 ints in range (0-255))" % lgro.name])
-        except(ValueError, TypeError):
+        except (ValueError, TypeError):
             message.append([
                 ERR_PADDING_INVALID,
                 lgro,
                 "%s's padding is invalid (must be an "
                 "array of 7 ints in range (0-255))" % lgro.name])
         namelower = lgro.name.lower()
-        if lgro.is_object():
-            if lgro.img.height != LGR_OBJ_HEIGHT:
+        if lgro.is_object() and lgro.img:
+            height = lgro.height
+            scaled = 0
+            if height == -1 and lgro.img:
+                height = lgro.img.height
+            elif height != lgro.img.height:
+                scaled = 1
+            if height != LGR_OBJ_HEIGHT:
                 message.append([
                     WARN_OBJ_HEIGHT_INVALID,
                     lgro,
@@ -209,16 +227,27 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                     "will be ignored." % (
                         lgro.name,
                         LGR_OBJ_HEIGHT,
-                        lgro.img.height)])
-            if lgro.img.width % LGR_OBJ_WIDTH != 0:
-                message.append([
-                    ERR_OBJ_WIDTH_INVALID,
-                    lgro,
-                    "As %s is an object, the width (%s) must be a "
-                    "multiple of %s" % (
-                        lgro.name,
-                        lgro.img.width,
-                        LGR_OBJ_WIDTH)])
+                        height)])
+            if scaled:
+                if lgro.img.width % lgro.img.height != 0:
+                    message.append([
+                        ERR_OBJ_WIDTH_INVALID,
+                        lgro,
+                        "As %s is a scaled object, the unscaled width (%s) must be a "
+                        "multiple of the unscaled height (%s)" % (
+                            lgro.name,
+                            lgro.img.width,
+                            LGR_OBJ_WIDTH)])
+            else:
+                if lgro.img.width % LGR_OBJ_WIDTH != 0:
+                    message.append([
+                        ERR_OBJ_WIDTH_INVALID,
+                        lgro,
+                        "As %s is an object, the width (%s) must be a "
+                        "multiple of %s" % (
+                            lgro.name,
+                            lgro.img.width,
+                            LGR_OBJ_WIDTH)])
             if lgro.img.width > LGR_OBJ_WIDTH*LGR_OBJ_FRAMES_MAX:
                 message.append([
                     ERR_OBJ_TOO_WIDE,
@@ -246,29 +275,8 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                         lgro,
                         "%s's image_type is invalid" % lgro.name])
                 else:
-                    if lgro.image_type == LGR_Image.PICTURE:
-                        if lgro.img.width > LGR_PIC_WIDTH_MAX:
-                            message.append([
-                                ERR_PIC_TOO_WIDE,
-                                lgro,
-                                "%s is too wide (%s) - the maximum is %s" %
-                                (lgro.name,
-                                 lgro.img.width,
-                                 LGR_PIC_WIDTH_MAX)])
-                        if(lgro.img.width * lgro.img.height >
-                                LGR_PIC_SIZE_MAX):
-                            message.append([
-                                ERR_PIC_TOO_MANY_PIXELS,
-                                lgro,
-                                "%s has too many pixels (%s) - the "
-                                "maximum is %s. Depending on the image, "
-                                "the game might crash" % (
-                                    lgro.name,
-                                    lgro.img.width * lgro.img.height,
-                                    LGR_PIC_SIZE_MAX)])
-                    elif lgro.image_type == LGR_Image.MASK:
-                        is_mask = True
-                if not(1 <= lgro.default_distance <= 999) and not is_mask:
+                    is_mask = lgro.image_type == LGR_Image.MASK
+                if not (1 <= lgro.default_distance <= 999) and not is_mask:
                     message.append([
                         ERR_DISTANCE_INVALID,
                         lgro,
@@ -276,14 +284,14 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                         "(must be integer between 1-999)" % (
                             lgro.name,
                             lgro.default_distance)])
-                if not(0 <= lgro.default_clipping <= 2) and not is_mask:
+                if not (0 <= lgro.default_clipping <= 2) and not is_mask:
                     message.append([
                         ERR_CLIPPING_INVALID,
                         lgro,
                         "%s's clipping (%s) is invalid" % (
                             lgro.name,
                             lgro.default_clipping)])
-                if not(11 <= lgro.transparency <= 15):
+                if not (11 <= lgro.transparency <= 15):
                     message.append([
                         ERR_TRANSPARENCY_INVALID,
                         lgro,
@@ -337,8 +345,7 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                             lgro.img.width,
                             lgro.img.height)])
             if namelower == "q1bike" or namelower == "q2bike":
-                if(lgro.img.width < LGR_RECOMMEND_BIKE_WIDTH or
-                        lgro.img.height < LGR_RECOMMEND_BIKE_HEIGHT):
+                if lgro.img.width < LGR_RECOMMEND_BIKE_WIDTH or lgro.img.height < LGR_RECOMMEND_BIKE_HEIGHT:
                     message.append([
                         WARN_QBIKE_TOO_SMALL,
                         lgro,
@@ -349,6 +356,14 @@ def check_LGR_error(lgro: Union[LGR, LGR_Image], palette: Optional[List[int]] = 
                             LGR_RECOMMEND_BIKE_HEIGHT,
                             lgro.img.width,
                             lgro.img.height)])
+            if lgro.is_unscalable():
+                if lgro.is_scaled():
+                    message.append([
+                        WARN_IGNORED_SCALING,
+                        lgro,
+                        "Warning: %s appears to be scaled, but this special image's scaling data is discarded "
+                        "and ignored by the game" % (lgro.name)])
+
         else:
             message.append([
                 ERR_IMG_MISSING,
